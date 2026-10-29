@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apocalipsis Z</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Libre+Franklin:wght@400;600;700&family=Special+Elite&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="editor.css">
+  <script src="app.js" defer></script>
+  <script src="editor.js" defer></script>
+</head>
+<body>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="encabezado">
+    <div class="marca">
+      <span class="marca__nombre">Apocalipsis Z</span>
+      <span class="marca__sub">Una novela grafica de supervivencia</span>
+    </div>
+    <nav class="pestanas" role="tablist" aria-label="Secciones">
+      <button class="pestana" id="tab-juego" role="tab" aria-selected="true" aria-controls="vista-juego" data-vista="juego">Jugar</button>
+      <button class="pestana" id="tab-editor" role="tab" aria-selected="false" aria-controls="vista-editor" data-vista="editor" tabindex="-1">Editor</button>
+    </nav>
+  </header>
+
+  <main id="contenido">
+    <section id="vista-juego" role="tabpanel" aria-labelledby="tab-juego">
+      <div class="juego" id="juego">
+        <div class="juego__barra">
+          <p class="juego__contador" aria-live="polite">Pasos: <span id="contador">0</span></p>
+          <button class="boton boton--secundario" id="btn-ruta" type="button">Ver ruta óptima</button>
+        </div>
+
+        <p class="aviso" id="error" role="alert" hidden></p>
+
+        <article class="vineta" id="escena" aria-busy="false">
+          <h1 class="vineta__titulo" id="titulo" tabindex="-1">Cargando</h1>
+          <p class="caja-narracion" id="texto"></p>
+          <ul class="globos" id="opciones"></ul>
+
+          <div class="final" id="final" hidden>
+            <p class="final__sello" id="final-sello"></p>
+            <p class="final__etiqueta" id="final-etiqueta"></p>
+            <button class="boton" id="btn-reiniciar" type="button">Reiniciar</button>
+          </div>
+        </article>
+
+        <section class="ruta" id="ruta" aria-labelledby="ruta-titulo" hidden>
+          <h2 class="ruta__titulo" id="ruta-titulo">Ruta óptima</h2>
+          <p class="ruta__pasos" id="ruta-pasos"></p>
+          <ol class="ruta__lista" id="ruta-lista"></ol>
+        </section>
+
+        <nav class="migas" aria-label="Recorrido">
+          <h2 class="migas__titulo">Recorrido</h2>
+          <ol class="migas__lista" id="migas"></ol>
+        </nav>
+      </div>
+    </section>
+
+    <section id="vista-editor" role="tabpanel" aria-labelledby="tab-editor" hidden></section>
+  </main>
+</body>
+</html>

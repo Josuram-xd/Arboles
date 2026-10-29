@@ -1,0 +1,116 @@
+[
+  {
+    "id": "inicio",
+    "titulo": "Despertar en la ciudad",
+    "texto": "Las sirenas aullan en la distancia. Abres la ventana y ves la calle cubierta de coches volcados. Tienes una mochila, una linterna y poca agua.",
+    "final": null,
+    "opciones": [
+      {"texto": "Bajar a la calle en busca de agua", "destino": "agua"},
+      {"texto": "Ir a la tienda de armas y comida de la esquina", "destino": "tienda"},
+      {"texto": "Refugiarte en el supermercado cercano", "destino": "supermercado"}
+    ]
+  },
+  {
+    "id": "agua",
+    "titulo": "La fuente de la plaza",
+    "texto": "Una fuente asoma tras una furgoneta. Un grupo de infectados camina en tu dirección. Solo tienes unos segundos.",
+    "final": null,
+    "opciones": [
+      {"texto": "Correr hacia la fuente sin mirar atrás", "destino": "muerte_mordida"},
+      {"texto": "Esconderte tras la furgoneta y volver a la tienda", "destino": "tienda"}
+    ]
+  },
+  {
+    "id": "tienda",
+    "titulo": "La armería a medio saquear",
+    "texto": "Encuentras una escopeta y dos cajas de cartuchos. La puerta trasera está abierta y se oyen pasos afuera.",
+    "final": null,
+    "opciones": [
+      {"texto": "Salir por la puerta trasera con la escopeta", "destino": "muerte_emboscada"},
+      {"texto": "Cargar lo que puedas y subir a la azotea", "destino": "azotea"}
+    ]
+  },
+  {
+    "id": "supermercado",
+    "titulo": "Los pasillos vacíos",
+    "texto": "Las estanterías están desnudas. Tras una puerta de metal oyes golpes rítmicos.",
+    "final": null,
+    "opciones": [
+      {"texto": "Abrir la cámara frigorífica cerrada", "destino": "camara"},
+      {"texto": "Subir por el ascensor de servicio a la azotea", "destino": "azotea"}
+    ]
+  },
+  {
+    "id": "camara",
+    "titulo": "El superviviente",
+    "texto": "Dentro hay un hombre con un rifle y tres latas de comida. Te apunta y te ofrece un trato. Su mirada no pestañea.",
+    "final": null,
+    "opciones": [
+      {"texto": "Confiar en él y seguirlo sin preguntas", "destino": "muerte_traicion"},
+      {"texto": "Negociar y escapar por el montacargas hacia el metro", "destino": "metro"}
+    ]
+  },
+  {
+    "id": "azotea",
+    "titulo": "La azotea",
+    "texto": "Desde aquí ves humo al norte y luces intermitentes en el cielo. Hay una radio vieja y un bidón de agua medio lleno.",
+    "final": null,
+    "opciones": [
+      {"texto": "Encender la radio y hacer señales", "destino": "helicoptero"},
+      {"texto": "Bajar por la escalera de incendios hacia el metro", "destino": "metro"},
+      {"texto": "Esperar en la azotea sin moverte", "destino": "muerte_hambre"}
+    ]
+  },
+  {
+    "id": "metro",
+    "titulo": "Andén oscuro",
+    "texto": "El metro está inundado y en silencio. Desde el túnel llega un arrastre lento. Un cartel verde señala la salida de emergencia.",
+    "final": null,
+    "opciones": [
+      {"texto": "Seguir el cartel verde hacia la estación de emergencia", "destino": "bunker"},
+      {"texto": "Avanzar en la oscuridad con la linterna apagada", "destino": "muerte_mordida"}
+    ]
+  },
+  {
+    "id": "helicoptero",
+    "titulo": "Las hélices",
+    "texto": "El helicóptero desciende sobre la azotea entre polvo y estruendo. Un soldado te tiende la mano. Te alejan de la ciudad.",
+    "final": "victoria",
+    "opciones": []
+  },
+  {
+    "id": "bunker",
+    "titulo": "Búnker de emergencia",
+    "texto": "La puerta de acero se cierra tras de ti. Dentro hay agua limpia, camas y un médico que sonríe por primera vez en días.",
+    "final": "victoria",
+    "opciones": []
+  },
+  {
+    "id": "muerte_emboscada",
+    "titulo": "Emboscada en el callejón",
+    "texto": "Tres infectados se lanzan desde la oscuridad. Disparas hasta que se acaba la munición. Ya no hay salida.",
+    "final": "muerte",
+    "opciones": []
+  },
+  {
+    "id": "muerte_mordida",
+    "titulo": "Una mordida",
+    "texto": "Una mano helada te agarra del brazo. Sientes el dolor y después la fiebre. La oscuridad te traga.",
+    "final": "muerte",
+    "opciones": []
+  },
+  {
+    "id": "muerte_hambre",
+    "titulo": "Sin agua ni comida",
+    "texto": "Pasan tres días bajo el sol. La sed te nubla la vista y las sirenas se apagan. Nadie viene.",
+    "final": "muerte",
+    "opciones": []
+  },
+  {
+    "id": "muerte_traicion",
+    "titulo": "El trato",
+    "texto": "Confías en el superviviente y bajas el arma. Su rifle se alza y el disparo resuena en la cámara. Era una trampa.",
+    "final": "muerte",
+    "opciones": []
+  }
+]
