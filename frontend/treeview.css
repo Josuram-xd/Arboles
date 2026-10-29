@@ -169,11 +169,11 @@
 
 /* Discarded branches fade out; untouched nodes are dimmed */
 .tv-dim {
-  opacity: 0.5;
+  opacity: 0.75;
 }
 
 .tv-off {
-  opacity: 0.18;
+  opacity: 0.4;
 }
 
 /* Current node pulses */
