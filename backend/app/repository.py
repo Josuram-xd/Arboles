@@ -1,4 +1,4 @@
-"""Repositorio JSON de escenas: CRUD persistente y arbol anytree desde 'inicio'."""
+"""JSON scene repository: persistent CRUD and an anytree tree rooted at 'start'."""
 
 import json
 import os
@@ -6,104 +6,105 @@ from pathlib import Path
 
 from anytree import Node
 
-from .models import Escena
+from .models import Scene
 
-RAIZ = "inicio"
-
-
-class ErrorRepositorio(Exception):
-    """Base de los errores del repositorio."""
+ROOT = "start"
 
 
-class NoEncontrada(ErrorRepositorio):
+class RepositoryError(Exception):
+    """Base class for repository errors."""
+
+
+class NotFound(RepositoryError):
     pass
 
 
-class YaExiste(ErrorRepositorio):
+class AlreadyExists(RepositoryError):
     pass
 
 
-class EnUso(ErrorRepositorio):
-    """La escena no puede borrarse: es 'inicio' o otra escena apunta a ella."""
+class InUse(RepositoryError):
+    """Scene cannot be deleted: it is 'start' or another scene targets it."""
 
 
-class IdInmutable(ErrorRepositorio):
-    """actualizar() no renombra escenas: romperia los destinos que apuntan a ella."""
+class ImmutableId(RepositoryError):
+    """update() does not rename scenes: renaming would break the targets pointing to it."""
 
 
-class RepositorioEscenas:
-    def __init__(self, ruta_json: str | Path) -> None:
-        self._ruta = Path(ruta_json)
+class SceneRepository:
+    def __init__(self, json_path: str | Path) -> None:
+        self._path = Path(json_path)
 
-    def listar(self) -> list[Escena]:
-        if not self._ruta.exists():
+    def list_all(self) -> list[Scene]:
+        if not self._path.exists():
             return []
-        datos = json.loads(self._ruta.read_text(encoding="utf-8"))
-        return [Escena.model_validate(d) for d in datos]
+        data = json.loads(self._path.read_text(encoding="utf-8"))
+        return [Scene.model_validate(d) for d in data]
 
-    def obtener(self, escena_id: str) -> Escena:
-        return self.listar()[self._indice(self.listar(), escena_id)]
+    def get(self, scene_id: str) -> Scene:
+        scenes = self.list_all()
+        return scenes[self._index(scenes, scene_id)]
 
-    def crear(self, escena: Escena) -> Escena:
-        escenas = self.listar()
-        if any(e.id == escena.id for e in escenas):
-            raise YaExiste(escena.id)
-        escenas.append(escena)
-        self._guardar(escenas)
-        return escena
+    def create(self, scene: Scene) -> Scene:
+        scenes = self.list_all()
+        if any(s.id == scene.id for s in scenes):
+            raise AlreadyExists(scene.id)
+        scenes.append(scene)
+        self._save(scenes)
+        return scene
 
-    def actualizar(self, escena_id: str, escena: Escena) -> Escena:
-        escenas = self.listar()
-        indice = self._indice(escenas, escena_id)
-        if escena.id != escena_id:
-            raise IdInmutable(escena_id)
-        escenas[indice] = escena
-        self._guardar(escenas)
-        return escena
+    def update(self, scene_id: str, scene: Scene) -> Scene:
+        scenes = self.list_all()
+        index = self._index(scenes, scene_id)
+        if scene.id != scene_id:
+            raise ImmutableId(scene_id)
+        scenes[index] = scene
+        self._save(scenes)
+        return scene
 
-    def eliminar(self, escena_id: str) -> None:
-        escenas = self.listar()
-        self._indice(escenas, escena_id)
-        apuntada = any(
-            o.destino == escena_id for e in escenas if e.id != escena_id for o in e.opciones
+    def delete(self, scene_id: str) -> None:
+        scenes = self.list_all()
+        self._index(scenes, scene_id)
+        targeted = any(
+            o.target == scene_id for s in scenes if s.id != scene_id for o in s.options
         )
-        if escena_id == RAIZ or apuntada:
-            raise EnUso(escena_id)
-        self._guardar([e for e in escenas if e.id != escena_id])
+        if scene_id == ROOT or targeted:
+            raise InUse(scene_id)
+        self._save([s for s in scenes if s.id != scene_id])
 
-    def construir_arbol(self) -> Node:
-        mapa = {e.id: e for e in self.listar()}
-        if RAIZ not in mapa:
-            raise NoEncontrada(RAIZ)
-        return self._nodo(mapa, mapa[RAIZ], frozenset())
+    def build_tree(self) -> Node:
+        scenes = {s.id: s for s in self.list_all()}
+        if ROOT not in scenes:
+            raise NotFound(ROOT)
+        return self._node(scenes, scenes[ROOT], frozenset())
 
-    def _nodo(
+    def _node(
         self,
-        mapa: dict[str, Escena],
-        escena: Escena,
-        ancestros: frozenset[str],
-        padre: Node | None = None,
-        opcion: str | None = None,
+        scenes: dict[str, Scene],
+        scene: Scene,
+        ancestors: frozenset[str],
+        parent: Node | None = None,
+        option_text: str | None = None,
     ) -> Node:
-        nodo = Node(
-            escena.titulo, parent=padre, id=escena.id, final=escena.final, opcion=opcion
+        node = Node(
+            scene.title, parent=parent, id=scene.id, ending=scene.ending, option_text=option_text
         )
-        # Cortar ciclos: un destino ya presente en la rama no se vuelve a expandir.
-        rama = ancestros | {escena.id}
-        for op in escena.opciones:
-            if op.destino in mapa and op.destino not in rama:
-                self._nodo(mapa, mapa[op.destino], rama, nodo, op.texto)
-        return nodo
+        # Cut cycles: a target already on the current branch is not expanded again.
+        branch = ancestors | {scene.id}
+        for option in scene.options:
+            if option.target in scenes and option.target not in branch:
+                self._node(scenes, scenes[option.target], branch, node, option.text)
+        return node
 
     @staticmethod
-    def _indice(escenas: list[Escena], escena_id: str) -> int:
-        for i, e in enumerate(escenas):
-            if e.id == escena_id:
+    def _index(scenes: list[Scene], scene_id: str) -> int:
+        for i, s in enumerate(scenes):
+            if s.id == scene_id:
                 return i
-        raise NoEncontrada(escena_id)
+        raise NotFound(scene_id)
 
-    def _guardar(self, escenas: list[Escena]) -> None:
-        datos = [e.model_dump() for e in escenas]
-        temporal = self._ruta.with_name(self._ruta.name + ".tmp")
-        temporal.write_text(json.dumps(datos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        os.replace(temporal, self._ruta)  # reemplazo atomico: no deja el JSON a medias
+    def _save(self, scenes: list[Scene]) -> None:
+        data = [s.model_dump() for s in scenes]
+        temp = self._path.with_name(self._path.name + ".tmp")
+        temp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        os.replace(temp, self._path)  # atomic replace: never leaves a half-written JSON

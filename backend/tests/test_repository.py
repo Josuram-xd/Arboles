@@ -1,4 +1,4 @@
-"""Tests de modelos y repositorio sobre una copia temporal de data.json."""
+"""Model and repository tests, run against a temporary copy of data.json."""
 
 import shutil
 from pathlib import Path
@@ -7,150 +7,152 @@ import pytest
 from anytree import PreOrderIter
 from pydantic import ValidationError
 
-from app.models import Escena, Opcion
-from app.repository import EnUso, IdInmutable, NoEncontrada, RepositorioEscenas, YaExiste
+from app.models import Option, Scene
+from app.repository import AlreadyExists, ImmutableId, InUse, NotFound, SceneRepository
 
-RUTA_ORIGINAL = Path(__file__).resolve().parents[1] / "app" / "data.json"
+ORIGINAL_PATH = Path(__file__).resolve().parents[1] / "app" / "data.json"
 
 
 @pytest.fixture
 def repo(tmp_path):
-    copia = tmp_path / "data.json"
-    shutil.copy(RUTA_ORIGINAL, copia)
-    return RepositorioEscenas(copia)
+    copy = tmp_path / "data.json"
+    shutil.copy(ORIGINAL_PATH, copy)
+    return SceneRepository(copy)
 
 
-def escena(id_, opciones=(), final=None):
-    return Escena(id=id_, titulo=f"Titulo {id_}", texto="Texto", final=final, opciones=list(opciones))
+def scene(id_, options=(), ending=None):
+    return Scene(id=id_, title=f"Title {id_}", text="Text", ending=ending, options=list(options))
 
 
-def opcion(destino):
-    return Opcion(texto=f"ir a {destino}", destino=destino)
+def option(target):
+    return Option(text=f"go to {target}", target=target)
 
 
-# --- modelos ---
+# --- models ---
 
-def test_escena_no_final_con_opciones_es_valida():
-    assert escena("a", [opcion("b")]).final is None
-
-
-def test_escena_final_sin_opciones_es_valida():
-    assert escena("a", final="muerte").opciones == []
+def test_non_ending_scene_with_options_is_valid():
+    assert scene("a", [option("b")]).ending is None
 
 
-def test_escena_final_con_opciones_falla():
+def test_ending_scene_without_options_is_valid():
+    assert scene("a", ending="death").options == []
+
+
+def test_ending_scene_with_options_fails():
     with pytest.raises(ValidationError):
-        escena("a", [opcion("b")], final="victoria")
+        scene("a", [option("b")], ending="victory")
 
 
-def test_escena_no_final_sin_opciones_falla():
+def test_non_ending_scene_without_options_fails():
     with pytest.raises(ValidationError):
-        escena("a")
+        scene("a")
 
 
-def test_final_fuera_de_valores_permitidos_falla():
+def test_invalid_ending_value_fails():
     with pytest.raises(ValidationError):
-        escena("a", final="empate")
+        Scene(id="a", title="t", text="t", ending="draw", options=[])
 
 
-# --- datos reales ---
+# --- real data ---
 
-def test_data_json_es_valida_y_completa():
-    escenas = RepositorioEscenas(RUTA_ORIGINAL).listar()
-    ids = {e.id for e in escenas}
-    assert "inicio" in ids
-    assert 12 <= len(escenas) <= 14
-    assert sum(e.final == "victoria" for e in escenas) >= 2
-    assert sum(e.final == "muerte" for e in escenas) >= 3
-    assert all(o.destino in ids for e in escenas for o in e.opciones)
+def test_data_json_is_valid_and_complete():
+    scenes = SceneRepository(ORIGINAL_PATH).list_all()
+    ids = {s.id for s in scenes}
+    assert "start" in ids
+    assert 12 <= len(scenes) <= 14
+    assert sum(s.ending == "victory" for s in scenes) >= 2
+    assert sum(s.ending == "death" for s in scenes) >= 3
+    assert all(o.target in ids for s in scenes for o in s.options)
 
 
-def test_data_json_todas_las_escenas_son_alcanzables_desde_inicio():
-    arbol = RepositorioEscenas(RUTA_ORIGINAL).construir_arbol()
-    ids = {e.id for e in RepositorioEscenas(RUTA_ORIGINAL).listar()}
-    assert {n.id for n in PreOrderIter(arbol)} == ids
+def test_data_json_every_scene_is_reachable_from_start():
+    tree = SceneRepository(ORIGINAL_PATH).build_tree()
+    ids = {s.id for s in SceneRepository(ORIGINAL_PATH).list_all()}
+    assert {n.id for n in PreOrderIter(tree)} == ids
 
 
 # --- CRUD ---
 
-def test_listar_devuelve_todas_las_escenas(repo):
-    assert len(repo.listar()) == 13
+def test_list_all_returns_every_scene(repo):
+    assert len(repo.list_all()) == 13
 
 
-def test_obtener_existente_y_inexistente(repo):
-    assert repo.obtener("inicio").id == "inicio"
-    with pytest.raises(NoEncontrada):
-        repo.obtener("no_existe")
+def test_get_existing_and_missing(repo):
+    assert repo.get("start").id == "start"
+    with pytest.raises(NotFound):
+        repo.get("no_such_scene")
 
 
-def test_crear_persiste_en_json(repo, tmp_path):
-    repo.crear(escena("extra", final="victoria"))
-    assert RepositorioEscenas(tmp_path / "data.json").obtener("extra").final == "victoria"
+def test_create_persists_to_json(repo, tmp_path):
+    repo.create(scene("extra", ending="victory"))
+    assert SceneRepository(tmp_path / "data.json").get("extra").ending == "victory"
 
 
-def test_crear_id_repetido_falla(repo):
-    with pytest.raises(YaExiste):
-        repo.crear(escena("inicio", [opcion("agua")]))
+def test_create_duplicate_id_fails(repo):
+    with pytest.raises(AlreadyExists):
+        repo.create(scene("start", [option("water")]))
 
 
-def test_actualizar_persiste_cambios(repo, tmp_path):
-    original = repo.obtener("bunker")
-    repo.actualizar("bunker", original.model_copy(update={"titulo": "Nuevo titulo"}))
-    assert RepositorioEscenas(tmp_path / "data.json").obtener("bunker").titulo == "Nuevo titulo"
+def test_update_persists_changes(repo, tmp_path):
+    original = repo.get("bunker")
+    repo.update("bunker", original.model_copy(update={"title": "New title"}))
+    assert SceneRepository(tmp_path / "data.json").get("bunker").title == "New title"
 
 
-def test_actualizar_inexistente_falla(repo):
-    with pytest.raises(NoEncontrada):
-        repo.actualizar("no_existe", escena("no_existe", final="muerte"))
+def test_update_missing_scene_fails(repo):
+    with pytest.raises(NotFound):
+        repo.update("no_such_scene", scene("no_such_scene", ending="death"))
 
 
-def test_actualizar_no_permite_renombrar(repo):
-    with pytest.raises(IdInmutable):
-        repo.actualizar("bunker", escena("otro", final="victoria"))
+def test_update_cannot_rename(repo):
+    with pytest.raises(ImmutableId):
+        repo.update("bunker", scene("other", ending="victory"))
 
 
-def test_eliminar_escena_sin_referencias_persiste(repo, tmp_path):
-    repo.crear(escena("extra", final="muerte"))
-    repo.eliminar("extra")
-    assert "extra" not in {e.id for e in RepositorioEscenas(tmp_path / "data.json").listar()}
+def test_delete_unreferenced_scene_persists(repo, tmp_path):
+    repo.create(scene("extra", ending="death"))
+    repo.delete("extra")
+    assert "extra" not in {s.id for s in SceneRepository(tmp_path / "data.json").list_all()}
 
 
-def test_eliminar_escena_apuntada_por_otra_falla(repo):
-    with pytest.raises(EnUso):
-        repo.eliminar("agua")  # 'inicio' apunta a 'agua'
+def test_delete_scene_targeted_by_another_fails(repo):
+    with pytest.raises(InUse):
+        repo.delete("water")  # 'start' targets 'water'
 
 
-def test_eliminar_inicio_falla(repo):
-    with pytest.raises(EnUso):
-        repo.eliminar("inicio")
+def test_delete_start_fails(repo):
+    with pytest.raises(InUse):
+        repo.delete("start")
 
 
-def test_eliminar_inexistente_falla(repo):
-    with pytest.raises(NoEncontrada):
-        repo.eliminar("no_existe")
+def test_delete_missing_scene_fails(repo):
+    with pytest.raises(NotFound):
+        repo.delete("no_such_scene")
 
 
-# --- arbol ---
+# --- tree ---
 
-def test_construir_arbol_raiz_es_inicio(repo):
-    raiz = repo.construir_arbol()
-    assert raiz.id == "inicio"
-    assert {h.id for h in raiz.children} == {"agua", "tienda", "supermercado"}
-
-
-def test_construir_arbol_corta_ciclos(repo):
-    # metro -> azotea -> metro forma un ciclo.
-    metro = repo.obtener("metro")
-    repo.actualizar("metro", metro.model_copy(update={"opciones": [*metro.opciones, opcion("azotea")]}))
-
-    raiz = repo.construir_arbol()
-    for nodo in PreOrderIter(raiz):
-        ids_rama = [n.id for n in nodo.path]
-        assert len(ids_rama) == len(set(ids_rama))
+def test_build_tree_root_is_start(repo):
+    root = repo.build_tree()
+    assert root.id == "start"
+    assert {child.id for child in root.children} == {"water", "gunshop", "supermarket"}
 
 
-def test_construir_arbol_sin_inicio_falla(tmp_path):
-    ruta = tmp_path / "sin_inicio.json"
-    ruta.write_text('[{"id":"x","titulo":"X","texto":"t","final":"muerte","opciones":[]}]', encoding="utf-8")
-    with pytest.raises(NoEncontrada):
-        RepositorioEscenas(ruta).construir_arbol()
+def test_build_tree_cuts_cycles(repo):
+    # subway -> rooftop -> subway forms a cycle.
+    subway = repo.get("subway")
+    repo.update("subway", subway.model_copy(update={"options": [*subway.options, option("rooftop")]}))
+
+    root = repo.build_tree()
+    for node in PreOrderIter(root):
+        branch_ids = [n.id for n in node.path]
+        assert len(branch_ids) == len(set(branch_ids))
+
+
+def test_build_tree_without_start_fails(tmp_path):
+    path = tmp_path / "no_start.json"
+    path.write_text(
+        '[{"id":"x","title":"X","text":"t","ending":"death","options":[]}]', encoding="utf-8"
+    )
+    with pytest.raises(NotFound):
+        SceneRepository(path).build_tree()
