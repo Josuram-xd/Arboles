@@ -45,6 +45,14 @@ def create_router(repo: SceneRepository) -> APIRouter:
         # Contract: no reachable victory is a valid answer, not an error.
         return service.optimal_path() or {"path": None, "steps": None}
 
+    @router.get("/escape-paths")
+    def escape_paths():
+        return service.escape_paths()
+
+    @router.get("/stats")
+    def stats():
+        return service.stats()
+
     @router.get("/validate")
     def validate():
         return service.validate()
