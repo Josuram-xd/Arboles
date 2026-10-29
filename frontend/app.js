@@ -1,32 +1,33 @@
-// Juego de aventura: navega el arbol de escenas consumiendo la API.
+// Zombie survival graphic novel: walks the scene tree through the API.
 const API = '/api';
 
-class Juego {
-  constructor(raiz) {
+class Game {
+  constructor(root) {
     this.el = {
-      contador: raiz.querySelector('#contador'),
-      btnRuta: raiz.querySelector('#btn-ruta'),
-      error: raiz.querySelector('#error'),
-      escena: raiz.querySelector('#escena'),
-      titulo: raiz.querySelector('#titulo'),
-      texto: raiz.querySelector('#texto'),
-      opciones: raiz.querySelector('#opciones'),
-      final: raiz.querySelector('#final'),
-      finalSello: raiz.querySelector('#final-sello'),
-      finalEtiqueta: raiz.querySelector('#final-etiqueta'),
-      btnReiniciar: raiz.querySelector('#btn-reiniciar'),
-      ruta: raiz.querySelector('#ruta'),
-      rutaPasos: raiz.querySelector('#ruta-pasos'),
-      rutaLista: raiz.querySelector('#ruta-lista'),
-      migas: raiz.querySelector('#migas'),
+      stepCount: root.querySelector('#step-count'),
+      btnRoute: root.querySelector('#btn-route'),
+      error: root.querySelector('#error'),
+      scene: root.querySelector('#scene'),
+      title: root.querySelector('#scene-title'),
+      text: root.querySelector('#scene-text'),
+      options: root.querySelector('#options'),
+      ending: root.querySelector('#ending'),
+      endingStamp: root.querySelector('#ending-stamp'),
+      endingText: root.querySelector('#ending-text'),
+      btnRestart: root.querySelector('#btn-restart'),
+      route: root.querySelector('#route'),
+      routeSteps: root.querySelector('#route-steps'),
+      routeList: root.querySelector('#route-list'),
+      trail: root.querySelector('#trail'),
     };
-    this.pasos = 0;
-    this.historial = [];
-    this.el.btnRuta.addEventListener('click', () => this.verRutaOptima());
-    this.el.btnReiniciar.addEventListener('click', () => this.iniciar());
+    this.steps = 0;
+    this.history = [];
+    this.el.btnRoute.addEventListener('click', () => this.showOptimalPath());
+    this.el.btnRestart.addEventListener('click', () => this.start());
   }
 
-  async pedir(url) {
+  // Fetches JSON from the API; network and HTTP errors become user-facing messages.
+  async request(url) {
     let res;
     try {
       res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -34,135 +35,143 @@ class Juego {
       throw new Error('No se pudo conectar con el servidor. Revisa que este en marcha.');
     }
     if (!res.ok) {
-      const msg = res.status === 404 ? 'Esa escena no existe.' : `El servidor respondio con error ${res.status}.`;
+      const msg = res.status === 404
+        ? 'Esa escena no existe.'
+        : `El servidor respondió con error ${res.status}.`;
       throw new Error(msg);
     }
     return res.json();
   }
 
-  mostrarError(msg) {
+  showError(msg) {
     this.el.error.textContent = msg;
     this.el.error.hidden = !msg;
   }
 
-  async iniciar() {
-    this.pasos = 0;
-    this.historial = [];
-    this.el.final.hidden = true;
-    this.el.ruta.hidden = true;
-    await this.cargarEscena('inicio', true);
+  async start() {
+    this.steps = 0;
+    this.history = [];
+    this.el.ending.hidden = true;
+    this.el.route.hidden = true;
+    await this.loadScene('start', true);
   }
 
-  async cargarEscena(id, esInicio = false) {
-    this.mostrarError('');
-    this.el.escena.setAttribute('aria-busy', 'true');
+  async loadScene(id, isStart = false) {
+    this.showError('');
+    this.el.scene.setAttribute('aria-busy', 'true');
     try {
-      const escena = await this.pedir(`${API}/escenas/${encodeURIComponent(id)}`);
-      if (!esInicio) this.pasos += 1;
-      this.historial.push({ id: escena.id, titulo: escena.titulo });
-      this.renderizar(escena);
+      const scene = await this.request(`${API}/scenes/${encodeURIComponent(id)}`);
+      if (!isStart) this.steps += 1;
+      this.history.push({ id: scene.id, title: scene.title });
+      this.render(scene);
     } catch (err) {
-      this.mostrarError(err.message);
+      this.showError(err.message);
     } finally {
-      this.el.escena.setAttribute('aria-busy', 'false');
+      this.el.scene.setAttribute('aria-busy', 'false');
     }
   }
 
-  renderizar(escena) {
-    const { titulo, texto, opciones = [], final } = escena;
-    this.el.titulo.textContent = titulo;
-    this.el.texto.textContent = texto;
-    this.el.contador.textContent = String(this.pasos);
-    this.el.opciones.replaceChildren(...opciones.map((op) => this.crearOpcion(op)));
-    this.el.opciones.hidden = Boolean(final);
+  render(scene) {
+    const { title, text, options = [], ending } = scene;
+    this.el.title.textContent = title;
+    this.el.text.textContent = text;
+    this.el.stepCount.textContent = String(this.steps);
+    this.el.options.replaceChildren(...options.map((option) => this.createOption(option)));
+    this.el.options.hidden = Boolean(ending);
 
-    this.el.final.hidden = !final;
-    this.el.final.dataset.tipo = final ?? '';
-    if (final) {
-      const victoria = final === 'victoria';
-      this.el.finalSello.textContent = victoria ? 'Sobreviviste' : 'Fin';
-      this.el.finalEtiqueta.textContent = victoria
+    this.el.ending.hidden = !ending;
+    this.el.ending.dataset.ending = ending ?? '';
+    if (ending) {
+      const victory = ending === 'victory';
+      this.el.endingStamp.textContent = victory ? 'Sobreviviste' : 'Fin';
+      this.el.endingText.textContent = victory
         ? 'Llegaste al amanecer. El refugio sigue en pie.'
         : 'Te alcanzaron. La horda se lleva lo que queda.';
     }
-    this.renderizarMigas();
+    this.renderTrail();
 
-    this.el.escena.classList.remove('vineta--entrar');
-    void this.el.escena.offsetWidth; // reinicia la animacion
-    this.el.escena.classList.add('vineta--entrar');
-    this.el.titulo.focus({ preventScroll: false });
+    this.el.scene.classList.remove('panel--enter');
+    void this.el.scene.offsetWidth; // restart the entry animation
+    this.el.scene.classList.add('panel--enter');
+    this.el.title.focus();
   }
 
-  crearOpcion(opcion) {
+  createOption(option) {
     const li = document.createElement('li');
-    const boton = document.createElement('button');
-    boton.type = 'button';
-    boton.className = 'globo';
-    boton.textContent = opcion.texto;
-    boton.addEventListener('click', () => this.cargarEscena(opcion.destino));
-    li.appendChild(boton);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'bubble';
+    button.textContent = option.text;
+    button.addEventListener('click', () => this.loadScene(option.target));
+    li.appendChild(button);
     return li;
   }
 
-  renderizarMigas() {
-    const items = this.historial.map((h, i) => {
+  renderTrail() {
+    const items = this.history.map((entry, index) => {
       const li = document.createElement('li');
-      li.textContent = h.titulo;
-      if (i === this.historial.length - 1) li.setAttribute('aria-current', 'step');
+      li.textContent = entry.title;
+      if (index === this.history.length - 1) li.setAttribute('aria-current', 'step');
       return li;
     });
-    this.el.migas.replaceChildren(...items);
+    this.el.trail.replaceChildren(...items);
   }
 
-  async verRutaOptima() {
-    this.mostrarError('');
+  async showOptimalPath() {
+    this.showError('');
     try {
-      const [{ ruta, pasos }, escenas] = await Promise.all([
-        this.pedir(`${API}/ruta-optima`),
-        this.pedir(`${API}/escenas`).catch(() => []),
+      const [{ path, steps }, scenes] = await Promise.all([
+        this.request(`${API}/optimal-path`),
+        this.request(`${API}/scenes`).catch(() => []),
       ]);
-      const titulos = new Map(escenas.map((e) => [e.id, e.titulo]));
-      this.el.rutaPasos.textContent = `${pasos} pasos hasta la victoria.`;
-      this.el.rutaLista.replaceChildren(
-        ...ruta.map((id) => {
+      if (!path) {
+        this.el.route.hidden = true;
+        this.showError('No hay ruta hacia una victoria desde el inicio.');
+        return;
+      }
+      const titles = new Map(scenes.map((scene) => [scene.id, scene.title]));
+      this.el.routeSteps.textContent = `${steps} pasos hasta la victoria.`;
+      this.el.routeList.replaceChildren(
+        ...path.map((id) => {
           const li = document.createElement('li');
-          li.textContent = titulos.get(id) ?? id;
+          li.textContent = titles.get(id) ?? id;
           return li;
         }),
       );
-      this.el.ruta.hidden = false;
+      this.el.route.hidden = false;
     } catch (err) {
-      this.el.ruta.hidden = true;
-      this.mostrarError(err.message);
+      this.el.route.hidden = true;
+      this.showError(err.message);
     }
   }
 }
 
-function activarVista(nombre) {
-  const esJuego = nombre === 'juego';
-  for (const boton of document.querySelectorAll('.pestana')) {
-    const activa = boton.dataset.vista === nombre;
-    boton.setAttribute('aria-selected', String(activa));
-    boton.tabIndex = activa ? 0 : -1;
+// Switches between the Game and Editor tabs; the editor is initialized on first open.
+function activateView(name) {
+  const isGame = name === 'game';
+  for (const tab of document.querySelectorAll('.tab')) {
+    const active = tab.dataset.view === name;
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
   }
-  document.getElementById('vista-juego').hidden = !esJuego;
-  const vistaEditor = document.getElementById('vista-editor');
-  vistaEditor.hidden = esJuego;
+  document.getElementById('view-game').hidden = !isGame;
+  const editorView = document.getElementById('view-editor');
+  editorView.hidden = isGame;
 
-  if (!esJuego && !vistaEditor.dataset.iniciada) {
+  if (!isGame && !editorView.dataset.initialized) {
     if (typeof window.initEditor === 'function') {
-      window.initEditor(vistaEditor);
-      vistaEditor.dataset.iniciada = 'true';
+      window.initEditor(editorView);
+      editorView.dataset.initialized = 'true';
     } else {
-      vistaEditor.textContent = 'El editor no se pudo cargar. Recarga la pagina.';
+      editorView.textContent = 'El editor no se pudo cargar. Recarga la página.';
     }
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  for (const boton of document.querySelectorAll('.pestana')) {
-    boton.addEventListener('click', () => activarVista(boton.dataset.vista));
+  for (const tab of document.querySelectorAll('.tab')) {
+    tab.addEventListener('click', () => activateView(tab.dataset.view));
   }
-  const juego = new Juego(document.getElementById('juego'));
-  juego.iniciar();
+  const game = new Game(document.getElementById('game'));
+  game.start();
 });

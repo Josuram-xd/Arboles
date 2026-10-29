@@ -13,55 +13,55 @@
   <script src="editor.js" defer></script>
 </head>
 <body>
-  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
 
-  <header class="encabezado">
-    <div class="marca">
-      <span class="marca__nombre">Apocalipsis Z</span>
-      <span class="marca__sub">Una novela grafica de supervivencia</span>
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand__name">Apocalipsis Z</span>
+      <span class="brand__sub">Una novela gráfica de supervivencia</span>
     </div>
-    <nav class="pestanas" role="tablist" aria-label="Secciones">
-      <button class="pestana" id="tab-juego" role="tab" aria-selected="true" aria-controls="vista-juego" data-vista="juego">Jugar</button>
-      <button class="pestana" id="tab-editor" role="tab" aria-selected="false" aria-controls="vista-editor" data-vista="editor" tabindex="-1">Editor</button>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button class="tab" id="tab-game" role="tab" aria-selected="true" aria-controls="view-game" data-view="game">Jugar</button>
+      <button class="tab" id="tab-editor" role="tab" aria-selected="false" aria-controls="view-editor" data-view="editor" tabindex="-1">Editor</button>
     </nav>
   </header>
 
-  <main id="contenido">
-    <section id="vista-juego" role="tabpanel" aria-labelledby="tab-juego">
-      <div class="juego" id="juego">
-        <div class="juego__barra">
-          <p class="juego__contador" aria-live="polite">Pasos: <span id="contador">0</span></p>
-          <button class="boton boton--secundario" id="btn-ruta" type="button">Ver ruta óptima</button>
+  <main id="main">
+    <section id="view-game" role="tabpanel" aria-labelledby="tab-game">
+      <div class="game" id="game">
+        <div class="game__bar">
+          <p class="game__counter" aria-live="polite">Pasos: <span id="step-count">0</span></p>
+          <button class="btn btn--secondary" id="btn-route" type="button">Ver ruta óptima</button>
         </div>
 
-        <p class="aviso" id="error" role="alert" hidden></p>
+        <p class="notice" id="error" role="alert" hidden></p>
 
-        <article class="vineta" id="escena" aria-busy="false">
-          <h1 class="vineta__titulo" id="titulo" tabindex="-1">Cargando</h1>
-          <p class="caja-narracion" id="texto"></p>
-          <ul class="globos" id="opciones"></ul>
+        <article class="panel" id="scene" aria-busy="false">
+          <h1 class="panel__title" id="scene-title" tabindex="-1">Cargando</h1>
+          <p class="narration" id="scene-text"></p>
+          <ul class="bubbles" id="options"></ul>
 
-          <div class="final" id="final" hidden>
-            <p class="final__sello" id="final-sello"></p>
-            <p class="final__etiqueta" id="final-etiqueta"></p>
-            <button class="boton" id="btn-reiniciar" type="button">Reiniciar</button>
+          <div class="ending" id="ending" hidden>
+            <p class="ending__stamp" id="ending-stamp"></p>
+            <p class="ending__text" id="ending-text"></p>
+            <button class="btn" id="btn-restart" type="button">Reiniciar</button>
           </div>
         </article>
 
-        <section class="ruta" id="ruta" aria-labelledby="ruta-titulo" hidden>
-          <h2 class="ruta__titulo" id="ruta-titulo">Ruta óptima</h2>
-          <p class="ruta__pasos" id="ruta-pasos"></p>
-          <ol class="ruta__lista" id="ruta-lista"></ol>
+        <section class="route" id="route" aria-labelledby="route-title" hidden>
+          <h2 class="route__title" id="route-title">Ruta óptima</h2>
+          <p class="route__steps" id="route-steps"></p>
+          <ol class="route__list" id="route-list"></ol>
         </section>
 
-        <nav class="migas" aria-label="Recorrido">
-          <h2 class="migas__titulo">Recorrido</h2>
-          <ol class="migas__lista" id="migas"></ol>
+        <nav class="trail" aria-label="Recorrido">
+          <h2 class="trail__title">Recorrido</h2>
+          <ol class="trail__list" id="trail"></ol>
         </nav>
       </div>
     </section>
 
-    <section id="vista-editor" role="tabpanel" aria-labelledby="tab-editor" hidden></section>
+    <section id="view-editor" role="tabpanel" aria-labelledby="tab-editor" hidden></section>
   </main>
 </body>
 </html>
