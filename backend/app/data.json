@@ -1,116 +1,306 @@
 [
   {
     "id": "start",
-    "title": "Despertar en la ciudad",
-    "text": "Las sirenas aullan en la distancia. Abres la ventana y ves la calle cubierta de coches volcados. Tienes una mochila, una linterna y poca agua.",
-    "ending": null,
+    "title": "Piso 3",
+    "text": "Te despiertas en el pasillo de un edificio de oficinas. Las luces parpadean y hay sangre en la moqueta. Llevas una mochila, una linterna y dos botellas de agua.",
+    "ending": null, "escape": null, "enemy": null,
     "options": [
-      {"text": "Bajar a la calle en busca de agua", "target": "water"},
-      {"text": "Ir a la tienda de armas y comida de la esquina", "target": "gunshop"},
-      {"text": "Refugiarte en el supermercado cercano", "target": "supermarket"}
+      {"text": "Bajar por las escaleras de emergencia", "target": "stairs3", "effects": {}},
+      {"text": "Entrar en la oficina de recursos humanos", "target": "hr_office", "effects": {}},
+      {"text": "Llamar al ascensor del pasillo", "target": "elevator", "effects": {"noise": 1}}
     ]
   },
   {
-    "id": "water",
-    "title": "La fuente de la plaza",
-    "text": "Una fuente asoma tras una furgoneta. Un grupo de infectados camina en tu dirección. Solo tienes unos segundos.",
-    "ending": null,
+    "id": "stairs3",
+    "title": "Escaleras de emergencia",
+    "text": "Un caminante sube los escalones con la mandíbula colgando. Está entre tú y el piso 2.",
+    "ending": null, "escape": null, "enemy": "walker",
     "options": [
-      {"text": "Correr hacia la fuente sin mirar atrás", "target": "death_bite"},
-      {"text": "Esconderte tras la furgoneta y volver a la tienda", "target": "gunshop"}
+      {"text": "Golpearlo con el extintor", "target": "floor2", "effects": {"health": -1, "noise": 1}},
+      {"text": "Esquivarlo y bajar a toda prisa", "target": "death_stairs", "effects": {"health": -2}}
     ]
   },
   {
-    "id": "gunshop",
-    "title": "La armería a medio saquear",
-    "text": "Encuentras una escopeta y dos cajas de cartuchos. La puerta trasera está abierta y se oyen pasos afuera.",
-    "ending": null,
+    "id": "death_stairs",
+    "title": "El hueco",
+    "text": "Pisas un escalón roto y caes por el hueco. Los gritos de abajo se mezclan con los tuyos.",
+    "ending": "death", "escape": null, "enemy": "walker",
+    "options": []
+  },
+  {
+    "id": "floor2",
+    "title": "Piso 2",
+    "text": "La puerta del archivo está entreabierta. Un corredor gira la cabeza hacia ti y empieza a correr.",
+    "ending": null, "escape": null, "enemy": "runner",
     "options": [
-      {"text": "Salir por la puerta trasera con la escopeta", "target": "death_ambush"},
-      {"text": "Cargar lo que puedas y subir a la azotea", "target": "rooftop"}
+      {"text": "Entrar en el archivo y cerrar la puerta", "target": "archive", "effects": {"health": -1}},
+      {"text": "Bajar al sótano por el montacargas", "target": "basement", "effects": {"noise": 2}}
     ]
   },
   {
-    "id": "supermarket",
-    "title": "Los pasillos vacíos",
-    "text": "Las estanterías están desnudas. Tras una puerta de metal oyes golpes rítmicos.",
-    "ending": null,
+    "id": "archive",
+    "title": "El archivo",
+    "text": "Entre carpetas polvorientas hay un mapa del edificio. Alguien marcó con rotulador una ruta hacia el sótano.",
+    "ending": null, "escape": null, "enemy": null,
     "options": [
-      {"text": "Abrir la cámara frigorífica cerrada", "target": "freezer"},
-      {"text": "Subir por el ascensor de servicio a la azotea", "target": "rooftop"}
+      {"text": "Seguir la ruta del mapa hacia el sótano", "target": "basement", "effects": {"noise": 1}}
     ]
   },
   {
-    "id": "freezer",
-    "title": "El superviviente",
-    "text": "Dentro hay un hombre con un rifle y tres latas de comida. Te apunta y te ofrece un trato. Su mirada no pestañea.",
-    "ending": null,
+    "id": "hr_office",
+    "title": "Recursos humanos",
+    "text": "Los cajones están revueltos. Encuentras un botiquín y una linterna de repuesto.",
+    "ending": null, "escape": null, "enemy": null,
     "options": [
-      {"text": "Confiar en él y seguirlo sin preguntas", "target": "death_betrayal"},
-      {"text": "Negociar y escapar por el montacargas hacia el metro", "target": "subway"}
+      {"text": "Coger el botiquín y llamar al ascensor", "target": "elevator", "effects": {"supplies": 2}},
+      {"text": "Esconderte bajo el escritorio", "target": "hr_hide", "effects": {"noise": -1}}
     ]
   },
   {
-    "id": "rooftop",
-    "title": "La azotea",
-    "text": "Desde aquí ves humo al norte y luces intermitentes en el cielo. Hay una radio vieja y un bidón de agua medio lleno.",
-    "ending": null,
+    "id": "hr_hide",
+    "title": "La horda del pasillo",
+    "text": "Una horda pasa por el pasillo. El suelo retumba y el cristal de la puerta vibra.",
+    "ending": null, "escape": null, "enemy": "horde",
     "options": [
-      {"text": "Encender la radio y hacer señales", "target": "helicopter"},
-      {"text": "Bajar por la escalera de incendios hacia el metro", "target": "subway"},
-      {"text": "Esperar en la azotea sin moverte", "target": "death_hunger"}
+      {"text": "Contener la respiración", "target": "death_horde_found", "effects": {}},
+      {"text": "Salir por la puerta de atrás hacia el ascensor", "target": "elevator", "effects": {"health": -2, "noise": 2}}
     ]
   },
   {
-    "id": "subway",
-    "title": "Andén oscuro",
-    "text": "El metro está inundado y en silencio. Desde el túnel llega un arrastre lento. Un cartel verde señala la salida de emergencia.",
-    "ending": null,
+    "id": "death_horde_found",
+    "title": "Descubierto",
+    "text": "Una mano atraviesa la rendija de la puerta. La horda entra antes de que puedas gritar.",
+    "ending": "death", "escape": null, "enemy": "horde",
+    "options": []
+  },
+  {
+    "id": "elevator",
+    "title": "Ascensor",
+    "text": "Las puertas se abren en silencio. Dentro hay un charco de sangre seca y los botones siguen iluminados.",
+    "ending": null, "escape": null, "enemy": null,
     "options": [
-      {"text": "Seguir el cartel verde hacia la estación de emergencia", "target": "bunker"},
-      {"text": "Avanzar en la oscuridad con la linterna apagada", "target": "death_bite"}
+      {"text": "Subir al piso 4", "target": "apt_floor", "effects": {}},
+      {"text": "Bajar al sótano", "target": "basement", "effects": {"noise": 1}},
+      {"text": "Esperar dentro con la puerta abierta", "target": "death_elevator", "effects": {"noise": 1}}
     ]
+  },
+  {
+    "id": "death_elevator",
+    "title": "Trampa de acero",
+    "text": "Los caminantes entran en el ascensor desde el pasillo. Las puertas se cierran sobre ti.",
+    "ending": "death", "escape": null, "enemy": "walker",
+    "options": []
+  },
+  {
+    "id": "apt_floor",
+    "title": "Piso 4",
+    "text": "Un pasillo de apartamentos cubierto de mantas. En una puerta hay una nota: 'Hay agua en el 4B'.",
+    "ending": null, "escape": null, "enemy": null,
+    "options": [
+      {"text": "Entrar en el apartamento 4B y atrancar la puerta", "target": "apt_4b", "effects": {"supplies": 1}},
+      {"text": "Subir por la escalera hacia la azotea", "target": "roof_stairs", "effects": {"noise": 1}}
+    ]
+  },
+  {
+    "id": "apt_4b",
+    "title": "Apartamento 4B",
+    "text": "Dentro, un caminante se arrastra por la cocina. La nevera guarda agua intacta.",
+    "ending": null, "escape": null, "enemy": "walker",
+    "options": [
+      {"text": "Matarlo con el cuchillo de cocina y atrancar la puerta", "target": "hold_night", "effects": {"health": -1, "supplies": 1}}
+    ]
+  },
+  {
+    "id": "hold_night",
+    "title": "Primera noche",
+    "text": "Atrancas la puerta con la nevera y escuchas la ciudad. Tienes agua para tres días.",
+    "ending": null, "escape": null, "enemy": null,
+    "options": [
+      {"text": "Esperar la segunda noche sin hacer ruido", "target": "night2", "effects": {"noise": -1}}
+    ]
+  },
+  {
+    "id": "night2",
+    "title": "Segunda noche",
+    "text": "Golpes en la pared y un corredor cruza el pasillo de al lado. Algo arañan la puerta.",
+    "ending": null, "escape": null, "enemy": "runner",
+    "options": [
+      {"text": "Tapar la rendija de la puerta y callar", "target": "night3", "effects": {"noise": -2}},
+      {"text": "Asomarte a la mirilla para ver qué pasa", "target": "death_peephole", "effects": {"noise": 3}}
+    ]
+  },
+  {
+    "id": "death_peephole",
+    "title": "La mirilla",
+    "text": "Al asomarte, un ojo blanco te devuelve la mirada. El corredor revienta la puerta.",
+    "ending": "death", "escape": null, "enemy": "runner",
+    "options": []
+  },
+  {
+    "id": "night3",
+    "title": "Tercera noche",
+    "text": "Una voz de mujer llama desde el rellano: 'Tengo una cuerda y la llave del garaje, ábreme'.",
+    "ending": null, "escape": null, "enemy": null,
+    "options": [
+      {"text": "Abrir la puerta a la vecina", "target": "neighbor_meet", "effects": {"supplies": 1}},
+      {"text": "Ignorarla y seguir atrincherado", "target": "death_starve", "effects": {"health": -2}}
+    ]
+  },
+  {
+    "id": "death_starve",
+    "title": "Sin salida",
+    "text": "Esperas sin salir. El agua se acaba, la fiebre sube y la voz del rellano se apaga.",
+    "ending": "death", "escape": null, "enemy": null,
+    "options": []
+  },
+  {
+    "id": "neighbor_meet",
+    "title": "Lucía",
+    "text": "La vecina del 4C dice que la escalera de incendios llega a la calle. Un bruto empieza a subir por el hueco.",
+    "ending": null, "escape": null, "enemy": "brute",
+    "options": [
+      {"text": "Escapar con ella por la escalera de incendios", "target": "neighbor", "effects": {"health": -1}},
+      {"text": "Enfrentarte al bruto con el cuchillo", "target": "death_brute", "effects": {"health": -3}}
+    ]
+  },
+  {
+    "id": "death_brute",
+    "title": "El bruto",
+    "text": "El bruto te derriba contra la barandilla. Lucía grita tu nombre desde la ventana.",
+    "ending": "death", "escape": null, "enemy": "brute",
+    "options": []
+  },
+  {
+    "id": "neighbor",
+    "title": "El callejón",
+    "text": "Bajáis por la escalera de incendios y salís al callejón. Lucía te aprieta la mano y corréis hacia la luz de la avenida.",
+    "ending": "victory", "escape": "neighbor", "enemy": null,
+    "options": []
+  },
+  {
+    "id": "roof_stairs",
+    "title": "Escalera a la azotea",
+    "text": "Una puerta de metal da a la azotea. Un caminante sube los peldaños detrás de ti.",
+    "ending": null, "escape": null, "enemy": "walker",
+    "options": [
+      {"text": "Empujarlo escaleras abajo", "target": "roof_door", "effects": {"health": -1, "noise": 2}},
+      {"text": "Correr hacia la azotea sin mirar", "target": "death_roof_fall", "effects": {"health": -2}}
+    ]
+  },
+  {
+    "id": "death_roof_fall",
+    "title": "El borde",
+    "text": "Resbalas en la grava mojada y caes desde el borde del tejado. Abajo, la ciudad sigue ardiendo.",
+    "ending": "death", "escape": null, "enemy": null,
+    "options": []
+  },
+  {
+    "id": "roof_door",
+    "title": "Azotea",
+    "text": "Hay un depósito de agua y una antena rota. Al norte ves las luces de un helicóptero.",
+    "ending": null, "escape": null, "enemy": null,
+    "options": [
+      {"text": "Encender la baliza de emergencia", "target": "roof_signal", "effects": {"noise": 2}},
+      {"text": "Buscar la radio en la sala de máquinas", "target": "roof_radio", "effects": {"supplies": 1}}
+    ]
+  },
+  {
+    "id": "roof_radio",
+    "title": "La radio",
+    "text": "La radio funciona entre interferencias. Un corredor sale de la trampilla con los dientes al aire.",
+    "ending": null, "escape": null, "enemy": "runner",
+    "options": [
+      {"text": "Transmitir tus coordenadas", "target": "roof_signal", "effects": {"noise": 1}},
+      {"text": "Enfrentarlo con la barra de hierro", "target": "death_runner_roof", "effects": {"health": -2}}
+    ]
+  },
+  {
+    "id": "death_runner_roof",
+    "title": "La trampilla",
+    "text": "La barra resbala y el corredor te hunde contra el suelo. La radio sigue repitiendo tus coordenadas.",
+    "ending": "death", "escape": null, "enemy": "runner",
+    "options": []
+  },
+  {
+    "id": "roof_signal",
+    "title": "La baliza",
+    "text": "Se oye una horda subiendo la escalera. En el cielo, el helicóptero se acerca despacio.",
+    "ending": null, "escape": null, "enemy": "horde",
+    "options": [
+      {"text": "Encender la bengala y agitar la camiseta", "target": "helicopter", "effects": {"noise": 2}},
+      {"text": "Esconderte en la sala de máquinas", "target": "death_horde_roof", "effects": {"noise": -1}}
+    ]
+  },
+  {
+    "id": "death_horde_roof",
+    "title": "Demasiado tarde",
+    "text": "Te escondes, pero la horda llega antes que el rescate. El helicóptero se aleja sin verte.",
+    "ending": "death", "escape": null, "enemy": "horde",
+    "options": []
   },
   {
     "id": "helicopter",
     "title": "Las hélices",
-    "text": "El helicóptero desciende sobre la azotea entre polvo y estruendo. Un soldado te tiende la mano. Te alejan de la ciudad.",
-    "ending": "victory",
+    "text": "La bengala ilumina la azotea. Un soldado se descuelga con un arnés y te sube a la cabina.",
+    "ending": "victory", "escape": "helicopter", "enemy": null,
     "options": []
   },
   {
-    "id": "bunker",
-    "title": "Búnker de emergencia",
-    "text": "La puerta de acero se cierra tras de ti. Dentro hay agua limpia, camas y un médico que sonríe por primera vez en días.",
-    "ending": "victory",
+    "id": "basement",
+    "title": "Sótano",
+    "text": "El sótano huele a humedad. Un caminante se arrastra por el agua negra del suelo.",
+    "ending": null, "escape": null, "enemy": "walker",
+    "options": [
+      {"text": "Esquivarlo y entrar en la sala de calderas", "target": "boiler", "effects": {"noise": 1}},
+      {"text": "Enfrentarlo con la barra de hierro", "target": "death_basement", "effects": {"health": -2, "noise": 2}}
+    ]
+  },
+  {
+    "id": "death_basement",
+    "title": "El agua negra",
+    "text": "El caminante te agarra la pierna cuando giras. Caes al agua y no vuelves a salir.",
+    "ending": "death", "escape": null, "enemy": "walker",
     "options": []
   },
   {
-    "id": "death_ambush",
-    "title": "Emboscada en el callejón",
-    "text": "Tres infectados se lanzan desde la oscuridad. Disparas hasta que se acaba la munición. Ya no hay salida.",
-    "ending": "death",
+    "id": "boiler",
+    "title": "Sala de calderas",
+    "text": "Las calderas siguen calientes. En el suelo hay una rejilla de desagüe que da a un túnel.",
+    "ending": null, "escape": null, "enemy": null,
+    "options": [
+      {"text": "Abrir la rejilla y bajar al alcantarillado", "target": "sewer_grate", "effects": {"supplies": 1}},
+      {"text": "Encender la caldera para tener luz", "target": "death_gas", "effects": {"noise": 3}}
+    ]
+  },
+  {
+    "id": "death_gas",
+    "title": "Gas",
+    "text": "La caldera explota con olor a gas. El estruendo atrae a todo el edificio.",
+    "ending": "death", "escape": null, "enemy": null,
     "options": []
   },
   {
-    "id": "death_bite",
-    "title": "Una mordida",
-    "text": "Una mano helada te agarra del brazo. Sientes el dolor y después la fiebre. La oscuridad te traga.",
-    "ending": "death",
+    "id": "sewer_grate",
+    "title": "Alcantarillado",
+    "text": "Un túnel húmedo y frío. Las ratas huyen y al fondo se oyen pasos.",
+    "ending": null, "escape": null, "enemy": "horde",
+    "options": [
+      {"text": "Avanzar hacia la luz de la salida", "target": "sewers", "effects": {"supplies": 1}},
+      {"text": "Seguir el ruido del agua hacia la izquierda", "target": "death_sewers_flood", "effects": {"health": -2}}
+    ]
+  },
+  {
+    "id": "death_sewers_flood",
+    "title": "La crecida",
+    "text": "El ruido era una crecida. El agua te arrastra mientras la horda te sigue por el túnel.",
+    "ending": "death", "escape": null, "enemy": "horde",
     "options": []
   },
   {
-    "id": "death_hunger",
-    "title": "Sin agua ni comida",
-    "text": "Pasan tres días bajo el sol. La sed te nubla la vista y las sirenas se apagan. Nadie viene.",
-    "ending": "death",
-    "options": []
-  },
-  {
-    "id": "death_betrayal",
-    "title": "El trato",
-    "text": "Confías en el superviviente y bajas el arma. Su rifle se alza y el disparo resuena en la cámara. Era una trampa.",
-    "ending": "death",
+    "id": "sewers",
+    "title": "Salida al parque",
+    "text": "Sales por una tapa de alcantarilla a un parque cubierto de niebla. Nadie te persigue. Respiras por primera vez en horas.",
+    "ending": "victory", "escape": "sewers", "enemy": null,
     "options": []
   }
 ]

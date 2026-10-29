@@ -76,25 +76,40 @@ class SceneRepository:
         scenes = {s.id: s for s in self.list_all()}
         if ROOT not in scenes:
             raise NotFound(ROOT)
-        return self._node(scenes, scenes[ROOT], frozenset())
+        return self._expand(scenes, scenes[ROOT], set())
 
-    def _node(
+    def _expand(
         self,
         scenes: dict[str, Scene],
         scene: Scene,
-        ancestors: frozenset[str],
+        expanded: set[str],
         parent: Node | None = None,
         option_text: str | None = None,
     ) -> Node:
-        node = Node(
-            scene.title, parent=parent, id=scene.id, ending=scene.ending, option_text=option_text
-        )
-        # Cut cycles: a target already on the current branch is not expanded again.
-        branch = ancestors | {scene.id}
+        node = self._make_node(scene, parent, option_text, repeated=False)
+        expanded.add(scene.id)
         for option in scene.options:
-            if option.target in scenes and option.target not in branch:
-                self._node(scenes, scenes[option.target], branch, node, option.text)
+            target = scenes.get(option.target)
+            if target is None:
+                continue
+            if target.id in expanded:  # already shown elsewhere (or on this branch: a cycle)
+                self._make_node(target, node, option.text, repeated=True)
+            else:
+                self._expand(scenes, target, expanded, node, option.text)
         return node
+
+    @staticmethod
+    def _make_node(scene: Scene, parent: Node | None, option_text: str | None, repeated: bool) -> Node:
+        return Node(
+            scene.title,
+            parent=parent,
+            id=scene.id,
+            ending=scene.ending,
+            escape=scene.escape,
+            enemy=scene.enemy,
+            option_text=option_text,
+            repeated=repeated,
+        )
 
     @staticmethod
     def _index(scenes: list[Scene], scene_id: str) -> int:
