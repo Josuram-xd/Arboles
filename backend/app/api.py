@@ -1,68 +1,69 @@
-"""Endpoints REST bajo /api (contrato en CONTRATO.md)."""
+"""REST endpoints under /api (see CONTRACT.md)."""
 from fastapi import APIRouter, FastAPI, HTTPException, Response
 from fastapi.responses import JSONResponse
 
-from app.models import Escena
-from app.repository import EnUso, NoEncontrada, RepositorioEscenas, YaExiste
-from app.service import ServicioAventura
+from app.models import Scene
+from app.repository import AlreadyExists, ImmutableId, InUse, NotFound, SceneRepository
+from app.service import AdventureService
 
 
-def crear_router(repo: RepositorioEscenas) -> APIRouter:
+def create_router(repo: SceneRepository) -> APIRouter:
     router = APIRouter(prefix="/api")
-    servicio = ServicioAventura(repo)
+    service = AdventureService(repo)
 
-    @router.get("/escenas", response_model=list[Escena])
-    def listar():
-        return repo.listar()
+    @router.get("/scenes", response_model=list[Scene])
+    def list_scenes():
+        return repo.list_all()
 
-    @router.get("/escenas/{id}", response_model=Escena)
-    def obtener(id: str):
-        return repo.obtener(id)
+    @router.get("/scenes/{id}", response_model=Scene)
+    def get_scene(id: str):
+        return repo.get(id)
 
-    @router.post("/escenas", response_model=Escena, status_code=201)
-    def crear(escena: Escena):
-        repo.crear(escena)
-        return escena
+    @router.post("/scenes", response_model=Scene, status_code=201)
+    def create_scene(scene: Scene):
+        repo.create(scene)
+        return scene
 
-    @router.put("/escenas/{id}", response_model=Escena)
-    def actualizar(id: str, escena: Escena):
-        if escena.id != id:
-            raise HTTPException(422, "El id del cuerpo no coincide con el de la URL")
-        repo.actualizar(id, escena)
-        return escena
+    @router.put("/scenes/{id}", response_model=Scene)
+    def update_scene(id: str, scene: Scene):
+        if scene.id != id:
+            raise HTTPException(422, "El id de la escena no coincide con el de la URL")
+        repo.update(id, scene)
+        return scene
 
-    @router.delete("/escenas/{id}", status_code=204)
-    def eliminar(id: str):
-        repo.eliminar(id)
+    @router.delete("/scenes/{id}", status_code=204)
+    def delete_scene(id: str):
+        repo.delete(id)
         return Response(status_code=204)
 
-    @router.get("/arbol")
-    def arbol():
-        return servicio.arbol_dict()
+    @router.get("/tree")
+    def tree():
+        return service.tree_dict()
 
-    @router.get("/ruta-optima")
-    def ruta_optima():
-        ruta = servicio.ruta_optima()
-        if ruta is None:
-            raise HTTPException(404, "No hay ninguna victoria alcanzable desde 'inicio'")
-        return ruta
+    @router.get("/optimal-path")
+    def optimal_path():
+        # Contract: no reachable victory is a valid answer, not an error.
+        return service.optimal_path() or {"path": None, "steps": None}
 
-    @router.get("/validar")
-    def validar():
-        return servicio.validar()
+    @router.get("/validate")
+    def validate():
+        return service.validate()
 
     return router
 
 
-def instalar_manejadores(app: FastAPI) -> None:
-    """Mapea las excepciones del repositorio a codigos HTTP."""
+def install_error_handlers(app: FastAPI) -> None:
+    """Map repository exceptions to HTTP status codes, with user-facing messages in Spanish."""
 
-    def respuesta(codigo: int):
-        def manejador(request, exc):
-            return JSONResponse({"detail": str(exc)}, status_code=codigo)
+    def respond(status_code: int, message: str):
+        def handler(request, exc):
+            return JSONResponse({"detail": message}, status_code=status_code)
 
-        return manejador
+        return handler
 
-    app.add_exception_handler(NoEncontrada, respuesta(404))
-    app.add_exception_handler(YaExiste, respuesta(409))
-    app.add_exception_handler(EnUso, respuesta(409))
+    app.add_exception_handler(NotFound, respond(404, "La escena no existe"))
+    app.add_exception_handler(AlreadyExists, respond(409, "Ya existe una escena con ese id"))
+    app.add_exception_handler(
+        InUse, respond(409, "No se puede eliminar: otra escena apunta a ella o es el inicio")
+    )
+    app.add_exception_handler(ImmutableId, respond(422, "No se puede cambiar el id de una escena"))

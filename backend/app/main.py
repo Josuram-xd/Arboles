@@ -1,23 +1,23 @@
-"""Aplicacion FastAPI: API REST y frontend estatico."""
+"""FastAPI application: REST API plus the static frontend."""
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api import crear_router, instalar_manejadores
-from app.repository import RepositorioEscenas
+from app.api import create_router, install_error_handlers
+from app.repository import SceneRepository
 
-RAIZ = Path(__file__).resolve().parent
-RUTA_DATOS = RAIZ / "data.json"
-FRONTEND = RAIZ.parent.parent / "frontend"
+ROOT = Path(__file__).resolve().parent
+DATA_PATH = ROOT / "data.json"
+FRONTEND = ROOT.parent.parent / "frontend"
 
 
-def crear_app(ruta_json: Path = RUTA_DATOS) -> FastAPI:
-    app = FastAPI(title="Aventura de supervivencia")
-    instalar_manejadores(app)
-    app.include_router(crear_router(RepositorioEscenas(ruta_json)))
+def create_app(data_path: Path = DATA_PATH) -> FastAPI:
+    app = FastAPI(title="Zombie survival adventure")
+    install_error_handlers(app)
+    app.include_router(create_router(SceneRepository(data_path)))
     app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")
     return app
 
 
-app = crear_app()
+app = create_app()

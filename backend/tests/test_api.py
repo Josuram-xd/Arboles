@@ -6,107 +6,108 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.main import crear_app  # noqa: E402
+from app.main import create_app  # noqa: E402
 
 
-def E(id, titulo=None, final=None, opciones=()):
+def S(id, title=None, ending=None, options=()):
     return {
         "id": id,
-        "titulo": titulo or id.upper(),
-        "texto": f"texto de {id}",
-        "final": final,
-        "opciones": [{"texto": f"ir a {d}", "destino": d} for d in opciones],
+        "title": title or id.upper(),
+        "text": f"text of {id}",
+        "ending": ending,
+        "options": [{"text": f"go to {t}", "target": t} for t in options],
     }
 
 
-# inicio -> a -> v (victoria, 2 pasos); inicio -> b -> c -> w (victoria, 3 pasos)
-# c -> inicio es un ciclo. d no es alcanzable y tiene un destino roto. e es un callejon sin salida.
-ESCENAS = [
-    E("inicio", opciones=["a", "b"]),
-    E("a", opciones=["v"]),
-    E("b", opciones=["c"]),
-    E("c", opciones=["w", "inicio"]),
-    E("v", final="victoria"),
-    E("w", final="victoria"),
-    E("d", opciones=["nope"]),
-    E("e"),
+# start -> a -> v (victory, 2 steps); start -> b -> c -> w (victory, 3 steps)
+# c -> start is a cycle. d and e are unreachable; d has a broken target.
+SCENES = [
+    S("start", options=["a", "b"]),
+    S("a", options=["v"]),
+    S("b", options=["c"]),
+    S("c", options=["w", "start"]),
+    S("v", ending="victory"),
+    S("w", ending="victory"),
+    S("d", options=["nope"]),
+    S("e", ending="death"),
 ]
 
 
-def cliente(tmp_path, escenas=ESCENAS):
-    ruta = tmp_path / "data.json"
-    ruta.write_text(json.dumps(escenas), encoding="utf-8")
-    return TestClient(crear_app(ruta))
+def client(tmp_path, scenes=SCENES):
+    path = tmp_path / "data.json"
+    path.write_text(json.dumps(scenes), encoding="utf-8")
+    return TestClient(create_app(path))
 
 
-def test_listar_y_obtener(tmp_path):
-    c = cliente(tmp_path)
-    assert len(c.get("/api/escenas").json()) == len(ESCENAS)
-    assert c.get("/api/escenas/a").json()["id"] == "a"
-    assert c.get("/api/escenas/zzz").status_code == 404
+def test_list_and_get(tmp_path):
+    c = client(tmp_path)
+    assert len(c.get("/api/scenes").json()) == len(SCENES)
+    assert c.get("/api/scenes/a").json()["id"] == "a"
+    assert c.get("/api/scenes/zzz").status_code == 404
 
 
-def test_crear(tmp_path):
-    c = cliente(tmp_path)
-    nueva = E("nueva", opciones=["inicio"])
-    assert c.post("/api/escenas", json=nueva).status_code == 201
-    assert c.get("/api/escenas/nueva").json()["texto"] == "texto de nueva"
-    assert c.post("/api/escenas", json=nueva).status_code == 409
-    assert c.post("/api/escenas", json={"id": "x"}).status_code == 422
-    assert c.post("/api/escenas", json={**nueva, "final": "otro"}).status_code == 422
+def test_create(tmp_path):
+    c = client(tmp_path)
+    new = S("new", options=["start"])
+    assert c.post("/api/scenes", json=new).status_code == 201
+    assert c.get("/api/scenes/new").json()["text"] == "text of new"
+    assert c.post("/api/scenes", json=new).status_code == 409
+    assert c.post("/api/scenes", json={"id": "x"}).status_code == 422
+    assert c.post("/api/scenes", json={**new, "ending": "other"}).status_code == 422
 
 
-def test_actualizar(tmp_path):
-    c = cliente(tmp_path)
-    cambiada = E("a", titulo="Nuevo titulo", opciones=["v", "w"])
-    r = c.put("/api/escenas/a", json=cambiada)
+def test_update(tmp_path):
+    c = client(tmp_path)
+    changed = S("a", title="New title", options=["v", "w"])
+    assert c.put("/api/scenes/a", json=changed).status_code == 200
+    assert c.get("/api/scenes/a").json()["title"] == "New title"
+    assert c.put("/api/scenes/zzz", json=S("zzz", ending="death")).status_code == 404
+    assert c.put("/api/scenes/a", json=S("other", options=["v"])).status_code == 422
+
+
+def test_delete(tmp_path):
+    c = client(tmp_path)
+    assert c.delete("/api/scenes/e").status_code == 204
+    assert c.get("/api/scenes/e").status_code == 404
+    assert c.delete("/api/scenes/v").status_code == 409  # a targets v
+    assert c.delete("/api/scenes/start").status_code == 409
+    assert c.delete("/api/scenes/zzz").status_code == 404
+
+
+def test_tree_cuts_cycles(tmp_path):
+    root = client(tmp_path).get("/api/tree").json()
+    assert root["id"] == "start" and root["name"] == "START"
+    children = {h["id"]: h for h in root["children"]}
+    assert set(children) == {"a", "b"}
+    c_node = children["b"]["children"][0]
+    assert c_node["id"] == "c"
+    # The cycle c -> start is not expanded again.
+    assert all(h["id"] != "start" for h in c_node["children"])
+    assert [h["id"] for h in children["a"]["children"]] == ["v"]
+    assert children["a"]["children"][0]["ending"] == "victory"
+
+
+def test_optimal_path(tmp_path):
+    r = client(tmp_path).get("/api/optimal-path")
     assert r.status_code == 200
-    assert c.get("/api/escenas/a").json()["titulo"] == "Nuevo titulo"
-    assert c.put("/api/escenas/zzz", json=E("zzz")).status_code == 404
-    assert c.put("/api/escenas/a", json=E("otra")).status_code == 422
+    assert r.json() == {"path": ["start", "a", "v"], "steps": 2}
 
 
-def test_eliminar(tmp_path):
-    c = cliente(tmp_path)
-    assert c.delete("/api/escenas/e").status_code == 204
-    assert c.get("/api/escenas/e").status_code == 404
-    assert c.delete("/api/escenas/v").status_code == 409  # a apunta a v
-    assert c.delete("/api/escenas/inicio").status_code == 409
-    assert c.delete("/api/escenas/zzz").status_code == 404
+def test_optimal_path_without_victory(tmp_path):
+    no_victory = [S("start", options=["a"]), S("a", ending="death")]
+    r = client(tmp_path, no_victory).get("/api/optimal-path")
+    assert r.status_code == 200 and r.json()["path"] is None
 
 
-def test_arbol_corta_ciclos(tmp_path):
-    raiz = cliente(tmp_path).get("/api/arbol").json()
-    assert raiz["id"] == "inicio" and raiz["nombre"] == "INICIO"
-    hijos = {h["id"]: h for h in raiz["hijos"]}
-    assert set(hijos) == {"a", "b"}
-    c_nodo = hijos["b"]["hijos"][0]
-    assert c_nodo["id"] == "c"
-    # El ciclo c -> inicio no se repite como hijo infinito.
-    assert all(h["id"] != "inicio" for h in c_nodo["hijos"])
-    assert [h["id"] for h in hijos["a"]["hijos"]] == ["v"]
-    assert hijos["a"]["hijos"][0]["final"] == "victoria"
-
-
-def test_ruta_optima(tmp_path):
-    r = cliente(tmp_path).get("/api/ruta-optima")
-    assert r.status_code == 200
-    assert r.json() == {"ruta": ["inicio", "a", "v"], "pasos": 2}
-
-
-def test_ruta_optima_sin_victoria(tmp_path):
-    sin_victoria = [E("inicio", opciones=["a"]), E("a")]
-    assert cliente(tmp_path, sin_victoria).get("/api/ruta-optima").status_code == 404
-
-
-def test_validar(tmp_path):
-    r = cliente(tmp_path).get("/api/validar").json()
+def test_validate(tmp_path):
+    r = client(tmp_path).get("/api/validate").json()
+    # dead_ends is always empty: Scene already forbids non-ending scenes without options.
     assert r == {
-        "inalcanzables": ["d", "e"],
-        "sin_salida": ["e"],
-        "destinos_rotos": ["d"],
+        "unreachable": ["d", "e"],
+        "dead_ends": [],
+        "broken_targets": ["d"],
     }
 
 
-def test_frontend_en_raiz(tmp_path):
-    assert cliente(tmp_path).get("/").status_code == 200
+def test_frontend_served_at_root(tmp_path):
+    assert client(tmp_path).get("/").status_code == 200
