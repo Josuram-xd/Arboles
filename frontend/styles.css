@@ -9,6 +9,7 @@
   --blood-text: #e5484d;       /* on ink: 5.3:1 */
   --yellow: #d4b33c;           /* on ink: ~10:1 */
   --gray: #a8a29a;             /* on ink: ~7.4:1 */
+  --flesh: #7d8a72;            /* zombie skin, decorative only */
   --display: 'Bangers', 'Impact', sans-serif;
   --body: 'Libre Franklin', 'Helvetica Neue', Arial, sans-serif;
   --typewriter: 'Special Elite', 'Courier New', monospace;
@@ -77,6 +78,13 @@ body {
   color: var(--gray);
 }
 
+.site-header__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
 .tabs { display: flex; gap: 6px; }
 
 .tab {
@@ -98,6 +106,8 @@ body {
 }
 .tab:active { transform: translate(2px, 2px); }
 
+.btn--sound { font-size: 1rem; padding: 4px 12px 2px; }
+
 /* Main container */
 main { padding: 0 16px 120px; }
 
@@ -105,16 +115,79 @@ main { padding: 0 16px 120px; }
 #view-editor {
   max-width: 720px;
   margin: 0 auto;
-  padding-top: 40px;
+  padding-top: 32px;
 }
 
+/* HUD: health, supplies, noise */
+.hud {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.meter {
+  position: relative;
+  background: var(--ink-2);
+  border: 3px solid var(--paper);
+  padding: 10px 12px 12px;
+}
+.meter__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--display);
+  letter-spacing: 0.04em;
+  font-size: 1.125rem;
+}
+.meter__label { color: var(--paper); }
+.meter__value { font-family: var(--typewriter); font-size: 0.9375rem; color: var(--gray); }
+
+.meter__track {
+  margin-top: 8px;
+  height: 14px;
+  background: var(--ink);
+  border: 2px solid var(--gray);
+  overflow: hidden;
+}
+.meter__fill {
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  transform: scaleX(1);
+  transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.meter__fill--health { background: var(--blood-text); }
+.meter__fill--supplies { background: var(--yellow); }
+.meter__fill--noise { background: #7a6fbf; }
+
+.meter__floats {
+  position: absolute;
+  right: 12px;
+  top: 6px;
+  pointer-events: none;
+}
+
+.float {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  white-space: nowrap;
+  animation: float-up 1.1s ease-out forwards;
+}
+.float--good { color: var(--yellow); }
+.float--bad { color: var(--blood-text); }
+
+/* Game bar */
 .game__bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .game__counter {
@@ -124,6 +197,8 @@ main { padding: 0 16px 120px; }
   color: var(--gray);
 }
 .game__counter span { color: var(--yellow); font-weight: 700; }
+
+.game__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* Buttons */
 .btn {
@@ -140,6 +215,7 @@ main { padding: 0 16px 120px; }
 }
 .btn:hover { background: var(--blood-hover); }
 .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--paper); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn--secondary {
   background: var(--ink);
@@ -159,6 +235,21 @@ main { padding: 0 16px 120px; }
   border: 3px solid var(--blood);
   font-weight: 600;
 }
+
+/* Stage: wraps the panel so flash and shake affect the whole screen */
+.stage { position: relative; }
+
+.stage__flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(184, 20, 28, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.stage__flash--on { animation: flash 600ms ease-out; }
+
+.stage--shake { animation: shake 500ms ease-in-out; }
 
 /* Panel: comic frame */
 .panel {
@@ -188,19 +279,56 @@ main { padding: 0 16px 120px; }
 }
 .panel__title:focus { outline: none; }
 
-/* Narration box: caption-style card */
+/* Enemy figure */
+.enemy {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 0 0 24px;
+  padding: 12px 16px;
+  border: 3px dashed var(--gray);
+  background: var(--ink);
+}
+.enemy svg {
+  width: 120px;
+  height: 160px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+.enemy--brute svg { width: 150px; height: 190px; }
+.enemy--horde svg { width: 260px; height: 150px; }
+.enemy__name {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--blood-text);
+}
+
+.zombie__head,
+.zombie__body,
+.zombie__arm,
+.zombie__leg { fill: var(--flesh); }
+.zombie__eye { fill: var(--blood-text); }
+.zombie { transform-box: fill-box; transform-origin: 50% 100%; }
+
+/* Narration: each paragraph is a caption box */
 .narration {
   margin: 0 0 28px;
-  padding: 18px 22px;
   max-width: 60ch;
+}
+
+.caption {
+  margin: 0 0 12px;
+  padding: 16px 20px;
   background: var(--paper);
   color: var(--ink);
   border: 3px solid var(--ink);
   font-family: var(--typewriter);
   font-size: 1.0625rem;
   line-height: 1.6;
-  white-space: pre-line;
 }
+.caption:last-child { margin-bottom: 0; }
 
 /* Action bubbles */
 .bubbles {
@@ -233,7 +361,7 @@ main { padding: 0 16px 120px; }
 .bubble:hover { background: var(--paper-hover); transform: translateX(4px); }
 .bubble:active { transform: translate(2px, 2px); }
 
-/* Dramatic ending */
+/* Ending stamp */
 .ending {
   margin-top: 36px;
   padding: 28px 24px;
@@ -257,13 +385,47 @@ main { padding: 0 16px 120px; }
 }
 .ending__text {
   margin: 0 0 8px;
+  max-width: 48ch;
   font-family: var(--typewriter);
   font-size: 1.125rem;
   color: var(--paper);
 }
+.ending__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 
+/* Victory: yellow frame and a stamp animation per escape type */
 .ending[data-ending="victory"] { border-color: var(--yellow); }
 .ending[data-ending="victory"] .ending__stamp { color: var(--yellow); }
+.ending[data-escape="helicopter"] .ending__stamp { animation: rotor 900ms ease-out both; }
+.ending[data-escape="neighbor"] .ending__stamp { animation: slide-up 700ms ease-out both; }
+.ending[data-escape="sewers"] .ending__stamp { animation: drip 900ms ease-out both; }
+
+/* Death: dramatic entrance */
+.ending[data-ending="death"] .ending__stamp { animation: slam 600ms cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+
+/* Other escape routes */
+.escapes {
+  width: 100%;
+  margin-top: 8px;
+  text-align: left;
+  display: grid;
+  gap: 12px;
+}
+.escapes__item {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 12px 16px;
+}
+.escapes__name {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.375rem;
+  letter-spacing: 0.03em;
+}
+.escapes__steps,
+.escapes__none { margin: 0 0 6px; font-family: var(--typewriter); }
+.escapes__list { margin: 0; padding-left: 1.5rem; font-weight: 600; }
 
 /* Optimal route: newspaper clipping */
 .route {
@@ -323,37 +485,169 @@ main { padding: 0 16px 120px; }
   font-weight: 700;
 }
 
+/* Tree dialog */
+.tree-dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  background: var(--ink-2);
+  color: var(--paper);
+  border: 4px solid var(--paper);
+  box-shadow: 10px 10px 0 var(--blood);
+}
+.tree-dialog::backdrop { background: rgba(0, 0, 0, 0.75); }
+.tree-dialog__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 3px solid var(--blood);
+}
+.tree-dialog__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.75rem;
+  letter-spacing: 0.04em;
+}
+.tree-dialog__message {
+  margin: 16px 18px 0;
+  font-family: var(--typewriter);
+  color: #ffd9d9;
+}
+.tree-dialog__body {
+  padding: 16px 18px 20px;
+  overflow: auto;
+  max-height: calc(100vh - 150px);
+}
+
 /* Animations: only when motion is allowed */
 @media (prefers-reduced-motion: no-preference) {
   .panel--enter {
     animation: panel-enter 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
   }
-  @keyframes panel-enter {
-    from { opacity: 0; transform: translate(-10px, 12px) scale(0.97); }
-    to { opacity: 1; transform: none; }
+  .caption {
+    opacity: 0;
+    animation: caption-in 420ms ease-out forwards;
+    animation-delay: calc(var(--i, 0) * 260ms + 180ms);
+  }
+  .enemy {
+    animation: enemy-in 500ms ease-out both;
   }
 
-  .ending__stamp {
-    animation: stamp 420ms cubic-bezier(0.2, 0.9, 0.3, 1.3) 120ms both;
+  /* Walker: shambles closer and sways */
+  .enemy--walker .zombie {
+    animation: walker-in 900ms ease-out both, sway 1.8s ease-in-out 900ms infinite;
   }
-  @keyframes stamp {
-    from { opacity: 0; transform: rotate(-4deg) scale(1.6); }
-    to { opacity: 1; transform: rotate(-4deg) scale(1); }
+  /* Runner: lunges in fast and leans */
+  .enemy--runner .zombie {
+    animation: runner-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both, lean 700ms ease-in-out 420ms infinite alternate;
   }
+  /* Brute: stomps in heavily */
+  .enemy--brute .zombie {
+    animation: stomp-in 800ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  }
+  /* Horde: each figure staggers in with its own delay */
+  .enemy--horde .zombie {
+    animation: horde-in 700ms ease-out var(--d, 0ms) both, sway 2s ease-in-out infinite;
+  }
+
+}
+
+@keyframes panel-enter {
+  from { opacity: 0; transform: translate(-10px, 12px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes caption-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes enemy-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes walker-in {
+  from { opacity: 0; transform: translateX(-40px) scale(0.6) rotate(-6deg); }
+  60% { transform: translateX(4px) rotate(3deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes runner-in {
+  from { opacity: 0; transform: translateX(90px) rotate(-14deg); }
+  to { opacity: 1; transform: rotate(-10deg); }
+}
+@keyframes lean {
+  from { transform: rotate(-10deg); }
+  to { transform: rotate(-4deg); }
+}
+@keyframes stomp-in {
+  0% { opacity: 0; transform: translateY(-40px) scale(1.4); }
+  70% { opacity: 1; transform: translateY(4px) scale(0.96); }
+  100% { transform: none; }
+}
+@keyframes horde-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(0); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-36px); }
+}
+@keyframes flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(6px, -3px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+}
+@keyframes rotor {
+  0% { opacity: 0; transform: translateX(-40px) rotate(-12deg); }
+  50% { transform: translateX(6px) rotate(-3deg); }
+  100% { opacity: 1; transform: rotate(-4deg); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(30px) rotate(-4deg); }
+  to { opacity: 1; transform: rotate(-4deg); }
+}
+@keyframes drip {
+  0% { opacity: 0; transform: translateY(-30px) rotate(-4deg); }
+  60% { opacity: 1; transform: translateY(6px) rotate(-4deg); }
+  80% { transform: translateY(-3px) rotate(-4deg); }
+  100% { transform: rotate(-4deg); }
+}
+@keyframes slam {
+  0% { opacity: 0; transform: scale(2) rotate(-4deg); }
+  70% { opacity: 1; transform: scale(0.95) rotate(-4deg); }
+  100% { transform: rotate(-4deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition-duration: 0ms !important;
-    animation-duration: 0ms !important;
+    animation: none !important;
   }
+  .caption { opacity: 1; }
+  .float { display: none; }
 }
 
 /* Responsive */
 @media (max-width: 600px) {
+  .hud { grid-template-columns: 1fr; gap: 10px; }
+  .meter__floats { display: none; }
   .panel { padding: 40px 18px 22px; box-shadow: 6px 6px 0 var(--blood); }
   .panel__title { margin-top: -70px; }
   .site-header { padding-top: 24px; }
-  .game, #view-editor { padding-top: 32px; }
+  .game, #view-editor { padding-top: 24px; }
   .route { padding: 20px; }
+  .enemy svg { width: 96px; height: 128px; }
+  .enemy--horde svg { width: 200px; height: 120px; }
 }

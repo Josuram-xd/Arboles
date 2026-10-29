@@ -9,8 +9,11 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Libre+Franklin:wght@400;600;700&family=Special+Elite&display=swap">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="editor.css">
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="treeview.css">
+  <script src="audio.js" defer></script>
+  <script src="treeview.js" defer></script>
   <script src="editor.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -18,35 +21,83 @@
   <header class="site-header">
     <div class="brand">
       <span class="brand__name">Apocalipsis Z</span>
-      <span class="brand__sub">Una novela gráfica de supervivencia</span>
+      <span class="brand__sub">Escapa del edificio antes del amanecer</span>
     </div>
-    <nav class="tabs" role="tablist" aria-label="Secciones">
-      <button class="tab" id="tab-game" role="tab" aria-selected="true" aria-controls="view-game" data-view="game">Jugar</button>
-      <button class="tab" id="tab-editor" role="tab" aria-selected="false" aria-controls="view-editor" data-view="editor" tabindex="-1">Editor</button>
-    </nav>
+    <div class="site-header__controls">
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab" id="tab-game" role="tab" aria-selected="true" aria-controls="view-game" data-view="game">Jugar</button>
+        <button class="tab" id="tab-editor" role="tab" aria-selected="false" aria-controls="view-editor" data-view="editor" tabindex="-1">Editor</button>
+      </nav>
+      <button class="btn btn--secondary btn--sound" id="btn-mute" type="button" aria-pressed="false">Sonido: activado</button>
+    </div>
   </header>
 
   <main id="main">
     <section id="view-game" role="tabpanel" aria-labelledby="tab-game">
       <div class="game" id="game">
+        <div class="hud" aria-label="Estado del personaje">
+          <div class="meter" id="meter-health">
+            <div class="meter__head">
+              <span class="meter__label">Salud</span>
+              <span class="meter__value" id="value-health">5/5</span>
+            </div>
+            <div class="meter__track" role="meter" aria-label="Salud" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5">
+              <div class="meter__fill meter__fill--health" id="fill-health"></div>
+            </div>
+            <div class="meter__floats" id="floats-health" aria-hidden="true"></div>
+          </div>
+          <div class="meter" id="meter-supplies">
+            <div class="meter__head">
+              <span class="meter__label">Suministros</span>
+              <span class="meter__value" id="value-supplies">3/5</span>
+            </div>
+            <div class="meter__track" role="meter" aria-label="Suministros" aria-valuemin="0" aria-valuemax="5" aria-valuenow="3">
+              <div class="meter__fill meter__fill--supplies" id="fill-supplies"></div>
+            </div>
+            <div class="meter__floats" id="floats-supplies" aria-hidden="true"></div>
+          </div>
+          <div class="meter" id="meter-noise">
+            <div class="meter__head">
+              <span class="meter__label">Ruido</span>
+              <span class="meter__value" id="value-noise">0/5</span>
+            </div>
+            <div class="meter__track" role="meter" aria-label="Ruido" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+              <div class="meter__fill meter__fill--noise" id="fill-noise"></div>
+            </div>
+            <div class="meter__floats" id="floats-noise" aria-hidden="true"></div>
+          </div>
+        </div>
+
         <div class="game__bar">
           <p class="game__counter" aria-live="polite">Pasos: <span id="step-count">0</span></p>
-          <button class="btn btn--secondary" id="btn-route" type="button">Ver ruta óptima</button>
+          <div class="game__actions">
+            <button class="btn btn--secondary" id="btn-tree" type="button">Ver árbol</button>
+            <button class="btn btn--secondary" id="btn-route" type="button">Ver ruta óptima</button>
+          </div>
         </div>
 
         <p class="notice" id="error" role="alert" hidden></p>
 
-        <article class="panel" id="scene" aria-busy="false">
-          <h1 class="panel__title" id="scene-title" tabindex="-1">Cargando</h1>
-          <p class="narration" id="scene-text"></p>
-          <ul class="bubbles" id="options"></ul>
+        <div class="stage" id="stage">
+          <div class="stage__flash" id="flash" aria-hidden="true"></div>
 
-          <div class="ending" id="ending" hidden>
-            <p class="ending__stamp" id="ending-stamp"></p>
-            <p class="ending__text" id="ending-text"></p>
-            <button class="btn" id="btn-restart" type="button">Reiniciar</button>
-          </div>
-        </article>
+          <article class="panel" id="scene" aria-busy="false">
+            <h1 class="panel__title" id="scene-title" tabindex="-1">Cargando</h1>
+            <div class="enemy" id="enemy" hidden></div>
+            <div class="narration" id="scene-text"></div>
+            <ul class="bubbles" id="options"></ul>
+
+            <div class="ending" id="ending" hidden>
+              <p class="ending__stamp" id="ending-stamp"></p>
+              <p class="ending__text" id="ending-text"></p>
+              <div class="ending__actions">
+                <button class="btn btn--secondary" id="btn-escapes" type="button">Ver cómo escapar de otra forma</button>
+                <button class="btn" id="btn-restart" type="button">Reiniciar</button>
+              </div>
+              <section class="escapes" id="escape-paths" aria-label="Otras formas de escapar" hidden></section>
+            </div>
+          </article>
+        </div>
 
         <section class="route" id="route" aria-labelledby="route-title" hidden>
           <h2 class="route__title" id="route-title">Ruta óptima</h2>
@@ -58,6 +109,15 @@
           <h2 class="trail__title">Recorrido</h2>
           <ol class="trail__list" id="trail"></ol>
         </nav>
+
+        <dialog class="tree-dialog" id="tree-dialog" aria-labelledby="tree-dialog-title">
+        <header class="tree-dialog__head">
+          <h2 class="tree-dialog__title" id="tree-dialog-title">Árbol de decisiones</h2>
+          <button class="btn btn--secondary" id="btn-tree-close" type="button">Cerrar</button>
+        </header>
+        <p class="tree-dialog__message" id="tree-message" hidden></p>
+        <div class="tree-dialog__body" id="tree-container"></div>
+      </dialog>
       </div>
     </section>
 
