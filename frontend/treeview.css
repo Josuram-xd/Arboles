@@ -1,0 +1,207 @@
+/* Decision tree viewer (F2). Ink / blood / paper palette, same tokens as editor.css. */
+
+.tv-root {
+  --tv-ink: #0c0b0b;
+  --tv-ink-2: #1a1716;
+  --tv-paper: #efe6d2;
+  --tv-blood: #b8141c;
+  --tv-blood-text: #e5484d;
+  --tv-yellow: #d4b33c;
+  --tv-grey: #a8a29a;
+  --tv-line: #3a3431;
+  --tv-mono: 'Special Elite', 'Courier New', monospace;
+  --tv-body: 'Libre Franklin', 'Helvetica Neue', Arial, sans-serif;
+
+  position: relative;
+  color: var(--tv-paper, #efe6d2);
+  font-family: var(--tv-body, 'Libre Franklin', Arial, sans-serif);
+}
+
+.tv-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tv-btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 36px;
+  padding: 4px 10px;
+  color: var(--tv-paper, #efe6d2);
+  background: transparent;
+  border: 2px solid var(--tv-grey, #a8a29a);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 100ms ease;
+}
+
+.tv-btn:hover {
+  background: var(--tv-ink, #0c0b0b);
+  border-color: var(--tv-paper, #efe6d2);
+}
+
+.tv-btn:active {
+  transform: scale(0.98);
+}
+
+.tv-root :focus-visible {
+  outline: 3px solid var(--tv-yellow, #d4b33c);
+  outline-offset: 2px;
+}
+
+.tv-svg {
+  display: block;
+  width: 100%;
+  height: 420px;
+  background: var(--tv-ink, #0c0b0b);
+  border: 2px solid var(--tv-line, #3a3431);
+  border-radius: 6px;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.tv-svg:active {
+  cursor: grabbing;
+}
+
+.tv-empty {
+  color: var(--tv-grey, #a8a29a);
+}
+
+/* Edges */
+.tv-edge {
+  fill: none;
+  stroke: var(--tv-grey, #a8a29a);
+  stroke-width: 1.5;
+  opacity: 0.8;
+  transition: stroke 400ms ease, opacity 500ms ease;
+}
+
+.tv-edge--path {
+  stroke: var(--tv-yellow, #d4b33c);
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.tv-edge--off {
+  stroke: var(--tv-line, #3a3431);
+  opacity: 0.35;
+}
+
+/* Nodes */
+.tv-node {
+  transition: opacity 500ms ease;
+}
+
+.tv-box {
+  fill: var(--tv-ink-2, #1a1716);
+  stroke: var(--tv-grey, #a8a29a);
+  stroke-width: 1.5;
+  transition: fill 400ms ease, stroke 400ms ease;
+}
+
+.tv-name {
+  font-family: var(--tv-body, 'Libre Franklin', Arial, sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--tv-paper, #efe6d2);
+}
+
+.tv-sub {
+  font-family: var(--tv-mono, 'Special Elite', monospace);
+  font-size: 10.5px;
+  fill: var(--tv-grey, #a8a29a);
+}
+
+.tv-victory .tv-box {
+  stroke: var(--tv-yellow, #d4b33c);
+  stroke-width: 2.5;
+}
+
+.tv-victory .tv-sub {
+  fill: var(--tv-yellow, #d4b33c);
+}
+
+.tv-death .tv-box {
+  stroke: var(--tv-blood-text, #e5484d);
+  fill: #2a0d0e;
+}
+
+.tv-death .tv-sub {
+  fill: var(--tv-blood-text, #e5484d);
+}
+
+.tv-ghost .tv-box {
+  fill: none;
+  stroke-dasharray: 5 4;
+  stroke-width: 1.2;
+}
+
+.tv-ghost {
+  opacity: 0.6;
+}
+
+.tv-enemy {
+  fill: var(--tv-blood-text, #e5484d);
+  stroke: var(--tv-ink, #0c0b0b);
+  stroke-width: 1.5;
+}
+
+/* Visited path */
+.tv-visited .tv-box {
+  stroke: var(--tv-yellow, #d4b33c);
+  stroke-width: 2.5;
+  fill: #2b2510;
+}
+
+.tv-visited .tv-name {
+  fill: var(--tv-yellow, #d4b33c);
+}
+
+.tv-optimal .tv-box {
+  stroke-dasharray: 2 3;
+  stroke: var(--tv-yellow, #d4b33c);
+}
+
+/* Discarded branches fade out; untouched nodes are dimmed */
+.tv-dim {
+  opacity: 0.5;
+}
+
+.tv-off {
+  opacity: 0.18;
+}
+
+/* Current node pulses */
+.tv-current .tv-box {
+  stroke: var(--tv-paper, #efe6d2);
+  stroke-width: 3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tv-current .tv-box {
+    animation: tv-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes tv-pulse {
+  0%, 100% { stroke-width: 2.5; }
+  50% { stroke-width: 7; }
+}
+
+/* Progressive appearance (only when animate is requested) */
+@media (prefers-reduced-motion: no-preference) {
+  .tv-animate {
+    animation: tv-in 400ms ease-out backwards;
+    animation-delay: var(--tv-delay, 0ms);
+  }
+}
+
+/* Opacity only: a transform here would override the node's translate() position. */
+@keyframes tv-in {
+  from { opacity: 0; }
+}

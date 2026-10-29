@@ -264,16 +264,59 @@ input:read-only {
 }
 
 .ed-option {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--ed-line, #3a3431);
 }
 
-@media (max-width: 560px) {
-  .ed-option {
-    grid-template-columns: 1fr;
-  }
+.ed-option-text,
+.ed-target {
+  flex: 1 1 180px;
+}
+
+.ed-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 100%;
+}
+
+.ed-effect {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ed-grey, #a8a29a);
+}
+
+.ed-effect-input {
+  width: 64px;
+  padding: 4px 6px;
+}
+
+.ed-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.ed-stats dt {
+  font-size: 12px;
+  color: var(--ed-grey, #a8a29a);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ed-stats dd {
+  margin: 0 0 6px;
+  font-family: var(--ed-display, 'Bangers', Impact, sans-serif);
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  color: var(--ed-paper, #efe6d2);
 }
 
 .ed-actions {
@@ -350,41 +393,7 @@ input:read-only {
   color: var(--ed-yellow, #d4b33c);
 }
 
-.ed-tree,
-.ed-tree ul {
-  font-size: 14px;
-}
-
-.ed-tree ul {
-  list-style: none;
-  margin: 0;
-  padding-left: 18px;
-  border-left: 1px solid var(--ed-line, #3a3431);
-}
-
-.ed-tree-root {
-  padding-left: 0 !important;
-  border-left: none !important;
-}
-
-.ed-tree li {
-  padding: 3px 0;
-}
-
-.ed-node {
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.ed-on-path {
-  background: var(--ed-yellow, #d4b33c);
-  color: var(--ed-ink, #0c0b0b) !important;
-}
-
-.ed-on-path .ed-item-id {
-  color: var(--ed-ink, #0c0b0b);
-}
-
+/* The tree itself is styled in treeview.css. */
 .ed-path-list {
   margin: 0;
   padding-left: 20px;

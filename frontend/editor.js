@@ -1,10 +1,13 @@
-/* Scene editor and tree viewer (F2). Vanilla JS, no build.
+/* Scene editor (F2). Vanilla JS, no build.
    Exposes window.initEditor(container). Data text is always inserted with textContent. */
 (function () {
   'use strict';
 
   const API = '/api';
   const ENDINGS = { '': 'Ninguno', victory: 'Victoria', death: 'Muerte' };
+  const ENEMIES = { '': 'Ninguno', walker: 'Caminante', runner: 'Corredor', brute: 'Bruto', horde: 'Horda' };
+  const ESCAPES = { '': 'Ninguno', helicopter: 'Helicóptero', neighbor: 'Vecina', sewers: 'Alcantarillas' };
+  const EFFECTS = [['health', 'Salud'], ['supplies', 'Suministros'], ['noise', 'Ruido']];
   const MESSAGES = {
     404: 'La escena no existe.',
     409: 'Conflicto: el id ya existe o hay otra escena que lo necesita.',
@@ -47,7 +50,11 @@
     if (!scene.id) return 'El id es obligatorio.';
     if (!scene.title) return 'El título es obligatorio.';
     if (!scene.text) return 'El texto es obligatorio.';
+    if (scene.ending === 'victory' && !scene.escape) return 'Un final de victoria necesita un escape.';
     if (scene.options.some(o => !o.text || !o.target)) return 'Cada opción necesita texto y destino.';
+    const badEffect = scene.options.some(o =>
+      Object.values(o.effects).some(v => !Number.isInteger(v) || v < -3 || v > 3));
+    if (badEffect) return 'Los efectos deben ser enteros entre -3 y 3.';
     return '';
   }
 
@@ -56,7 +63,6 @@
       this.container = container;
       this.scenes = [];
       this.editingId = null;
-      this.pathIds = new Set();
       this.build();
     }
 
@@ -97,6 +103,7 @@
       this.notice = h('p', { class: 'ed-notice', role: 'status', 'aria-live': 'polite' });
       this.listEl = h('ul', { class: 'ed-list' });
       this.validationEl = h('div', { class: 'ed-validation' });
+      this.statsEl = h('dl', { class: 'ed-stats' });
       this.treeEl = h('div', { class: 'ed-tree' });
       this.pathEl = h('div', { class: 'ed-path' });
       this.formTitle = h('h3', { class: 'ed-subtitle' }, 'Nueva escena');
@@ -107,6 +114,9 @@
           h('h2', { class: 'ed-title' }, 'Editor de escenas'),
           h('button', { type: 'button', class: 'ed-btn', onclick: () => this.refresh() }, 'Actualizar')),
         this.notice,
+        h('section', { class: 'ed-panel' },
+          h('h3', { class: 'ed-subtitle' }, 'Resumen'),
+          this.statsEl),
         h('div', { class: 'ed-grid' },
           h('section', { class: 'ed-panel' },
             h('h3', { class: 'ed-subtitle' }, 'Escenas'),
@@ -119,10 +129,7 @@
             this.validationEl),
           h('section', { class: 'ed-panel' },
             h('h3', { class: 'ed-subtitle' }, 'Árbol'),
-            h('p', { class: 'ed-legend' },
-              h('span', { class: 'ed-swatch ed-swatch--victory' }), ' Victoria  ',
-              h('span', { class: 'ed-swatch ed-swatch--death' }), ' Muerte  ',
-              h('span', { class: 'ed-swatch ed-swatch--path' }), ' Ruta óptima'),
+            h('p', { class: 'ed-legend' }, 'Ruta óptima resaltada hasta la victoria más cercana.'),
             this.treeEl,
             h('h4', { class: 'ed-subtitle ed-subtitle--minor' }, 'Ruta óptima'),
             this.pathEl))));
@@ -132,7 +139,11 @@
       this.inputId = h('input', { type: 'text', autocomplete: 'off', required: true });
       this.inputTitle = h('input', { type: 'text', required: true });
       this.textInput = h('textarea', { rows: 4, required: true });
-      this.endingSelect = h('select', {}, Object.entries(ENDINGS).map(([v, t]) => h('option', { value: v }, t)));
+      this.endingSelect = h('select', {
+        onchange: () => this.updateEscapeState()
+      }, Object.entries(ENDINGS).map(([v, t]) => h('option', { value: v }, t)));
+      this.enemySelect = h('select', {}, Object.entries(ENEMIES).map(([v, t]) => h('option', { value: v }, t)));
+      this.escapeSelect = h('select', {}, Object.entries(ESCAPES).map(([v, t]) => h('option', { value: v }, t)));
       this.optionsEl = h('div', { class: 'ed-options' });
       this.formNotice = h('p', { class: 'ed-notice', role: 'alert' });
       this.deleteBtn = h('button', { type: 'button', class: 'ed-btn ed-btn--danger', onclick: () => this.askDelete() }, 'Eliminar');
@@ -149,6 +160,8 @@
         h('label', { class: 'ed-field' }, h('span', {}, 'Título'), this.inputTitle),
         h('label', { class: 'ed-field' }, h('span', {}, 'Texto'), this.textInput),
         h('label', { class: 'ed-field' }, h('span', {}, 'Final'), this.endingSelect),
+        h('label', { class: 'ed-field' }, h('span', {}, 'Enemigo'), this.enemySelect),
+        h('label', { class: 'ed-field' }, h('span', {}, 'Escape (solo victorias)'), this.escapeSelect),
         h('fieldset', { class: 'ed-fieldset' },
           h('legend', {}, 'Opciones'),
           this.optionsEl,
@@ -164,7 +177,7 @@
 
     newScene() {
       this.editingId = null;
-      this.fill({ id: '', title: '', text: '', ending: null, options: [] });
+      this.fill({ id: '', title: '', text: '', ending: null, enemy: null, escape: null, options: [] });
       this.updateEditMode();
     }
 
@@ -177,33 +190,57 @@
       this.markSelection();
     }
 
+    // The escape is only meaningful for victory endings.
+    updateEscapeState() {
+      const isVictory = this.endingSelect.value === 'victory';
+      this.escapeSelect.disabled = !isVictory;
+      if (!isVictory) this.escapeSelect.value = '';
+    }
+
     fill(scene) {
       this.inputId.value = scene.id;
       this.inputTitle.value = scene.title;
       this.textInput.value = scene.text;
       this.endingSelect.value = scene.ending || '';
-      this.optionsEl.replaceChildren(...(scene.options || []).map(o => this.optionRow(o.text, o.target)));
+      this.enemySelect.value = scene.enemy || '';
+      this.escapeSelect.value = scene.escape || '';
+      this.updateEscapeState();
+      this.optionsEl.replaceChildren(...(scene.options || []).map(o => this.optionRow(o)));
     }
 
     readForm() {
+      const ending = this.endingSelect.value || null;
       return {
         id: this.inputId.value.trim(),
         title: this.inputTitle.value.trim(),
         text: this.textInput.value.trim(),
-        ending: this.endingSelect.value || null,
+        ending,
+        enemy: this.enemySelect.value || null,
+        escape: ending === 'victory' ? (this.escapeSelect.value || null) : null,
         options: [...this.optionsEl.querySelectorAll('.ed-option')].map(row => ({
           text: row.querySelector('.ed-option-text').value.trim(),
-          target: row.querySelector('.ed-target').value
+          target: row.querySelector('.ed-target').value,
+          effects: Object.fromEntries(EFFECTS.map(([key]) => [
+            key, Number(row.querySelector(`[data-effect="${key}"]`).value || 0)
+          ]))
         }))
       };
     }
 
-    optionRow(text = '', target = '') {
+    optionRow(option = {}) {
       const select = h('select', { class: 'ed-target', 'aria-label': 'Destino de la opción' });
-      this.fillTargets(select, target);
+      this.fillTargets(select, option.target || '');
+      const effects = option.effects || {};
       const row = h('div', { class: 'ed-option' },
-        h('input', { type: 'text', class: 'ed-option-text', value: text, placeholder: 'Texto de la opción', 'aria-label': 'Texto de la opción' }),
+        h('input', { type: 'text', class: 'ed-option-text', value: option.text || '', placeholder: 'Texto de la opción', 'aria-label': 'Texto de la opción' }),
         select,
+        h('div', { class: 'ed-effects' },
+          EFFECTS.map(([key, label]) => h('label', { class: 'ed-effect' },
+            h('span', {}, label),
+            h('input', {
+              type: 'number', min: -3, max: 3, step: 1, class: 'ed-effect-input',
+              value: effects[key] || 0, 'data-effect': key
+            })))),
         h('button', { type: 'button', class: 'ed-btn ed-btn--ghost', 'aria-label': 'Quitar opción', onclick: () => row.remove() }, '×'));
       return row;
     }
@@ -290,11 +327,11 @@
       }
     }
 
-    /* ---------- Lists, validation, tree ---------- */
+    /* ---------- Lists, validation, stats, tree ---------- */
 
     async refresh() {
       await this.loadScenes();
-      await Promise.all([this.loadTree(), this.loadValidation()]);
+      await Promise.all([this.loadTree(), this.loadValidation(), this.loadStats()]);
     }
 
     async loadScenes() {
@@ -326,13 +363,34 @@
       });
     }
 
+    async loadStats() {
+      try {
+        const s = await this.api('/stats');
+        const items = [
+          ['Escenas', s.scenes],
+          ['Victorias', s.endings.victory],
+          ['Muertes', s.endings.death],
+          ['Profundidad máxima', s.max_depth],
+          ['Hojas', s.leaf_count],
+          ['Ramificación media', Number(s.avg_branching).toFixed(2)]
+        ];
+        this.statsEl.replaceChildren(...items.flatMap(([term, value]) => [
+          h('dt', {}, term),
+          h('dd', {}, value)
+        ]));
+      } catch (err) {
+        this.statsEl.replaceChildren(h('p', { class: 'ed-error' }, this.errorMessage(err)));
+      }
+    }
+
     async loadValidation() {
       try {
         const r = await this.api('/validate');
         const sections = [
           ['Inalcanzables', r.unreachable],
           ['Sin salida', r.dead_ends],
-          ['Destinos rotos', r.broken_targets]
+          ['Destinos rotos', r.broken_targets],
+          ['Victorias sin escape', r.bad_victories || []]
         ];
         this.validationEl.replaceChildren(...sections.map(([title, ids]) => h('div', { class: 'ed-block' },
           h('h4', { class: 'ed-subtitle ed-subtitle--minor' }, `${title} (${ids.length})`),
@@ -353,22 +411,12 @@
         } catch (err) {
           this.notify(this.notice, 'No se pudo calcular la ruta óptima. ' + this.errorMessage(err));
         }
-        this.pathIds = new Set(optimal.path || []);
-        this.treeEl.replaceChildren(h('ul', { class: 'ed-tree-root' }, this.treeNode(tree)));
+        const path = optimal.path || [];
+        window.TreeView.render(this.treeEl, tree, { pathIds: path, optimalPath: path, currentId: null, animate: false });
         this.pathEl.replaceChildren(this.renderPath(optimal));
       } catch (err) {
         this.treeEl.replaceChildren(h('p', { class: 'ed-error' }, this.errorMessage(err)));
       }
-    }
-
-    treeNode(node) {
-      const classes = ['ed-node'];
-      if (node.ending) classes.push(`ed-ending--${node.ending}`);
-      if (this.pathIds.has(node.id)) classes.push('ed-on-path');
-      const children = (node.children || []).map(c => this.treeNode(c));
-      return h('li', {},
-        h('span', { class: classes.join(' ') }, node.name || node.id, ' ', h('code', { class: 'ed-item-id' }, node.id)),
-        children.length ? h('ul', {}, children) : null);
     }
 
     renderPath(optimal) {
