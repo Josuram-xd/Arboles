@@ -166,7 +166,7 @@
   {
     "id": "death_brute",
     "title": "El bruto",
-    "text": "El bruto te derriba contra la barandilla. Lucía grita tu nombre desde la ventana.",
+    "text": "El bruto te derriba contra la barandilla. Lucía grita desde la ventana.",
     "ending": "death", "escape": null, "enemy": "brute",
     "options": []
   },
@@ -227,7 +227,7 @@
     "text": "Se oye una horda subiendo la escalera. En el cielo, el helicóptero se acerca despacio.",
     "ending": null, "escape": null, "enemy": "horde",
     "options": [
-      {"text": "Encender la bengala y agitar la camiseta", "target": "helicopter", "effects": {"noise": 2}},
+      {"text": "Agitar la camiseta bajo la luz de la baliza", "target": "helicopter", "effects": {"noise": 2}},
       {"text": "Esconderte en la sala de máquinas", "target": "death_horde_roof", "effects": {"noise": -1}}
     ]
   },
@@ -241,7 +241,7 @@
   {
     "id": "helicopter",
     "title": "Las hélices",
-    "text": "La bengala ilumina la azotea. Un soldado se descuelga con un arnés y te sube a la cabina.",
+    "text": "La baliza ilumina la azotea. Un soldado se descuelga con un arnés y te sube a la cabina.",
     "ending": "victory", "escape": "helicopter", "enemy": null,
     "options": []
   },
